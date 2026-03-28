@@ -108,6 +108,9 @@ Similarly, this framework does not perform well on mobile platforms. This is par
 
 The author of this project has no official relationship with deepin, if you wish to try out the deepin system after viewing this project, please visit [https://www.deepin.org/en/](https://www.deepin.org/en/)
 
+##How to set it without github
+1.You need a VPS to create 
+
 ### Spacial thanks
 
 To you, hope you enjoy this website.
