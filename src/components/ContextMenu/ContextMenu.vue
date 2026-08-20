@@ -4,7 +4,7 @@
       <ContextMenuButton disabled further_menu :text="'New'"/>
       <ContextMenuButton disabled further_menu :text="'View'"/>
       <ContextMenuButton disabled further_menu :text="'Sort by'"/>
-      <ContextMenuButton :text="'Reload BilibiliOS'" @click.native="reload_clicked"/>
+      <ContextMenuButton :text="'Reload LoopRainOS'" @click.native="reload_clicked"/>
       <ContextMenuButton disabled :text="'Paste'"/>
       <ContextMenuButton  :text="'Open in Terminal'" @click.native="terminal_clicked"/>
       <div class=" tw-w-full" style="height:1.5px;background-color:rgba(188,188,188,1)"></div>

@@ -21,7 +21,7 @@ const routes = [
     name: "LoginPage",
     component: LoginPage,
     meta : {
-      title:"Bilibili OS"
+      title:"LoopRainOS"
     }
   },
   {
@@ -29,7 +29,7 @@ const routes = [
     name: "DesktopWithPost",
     component: Desktop,
     meta : {
-      title:"Bilibili OS"
+      title:"LoopRainOS"
     }
   },
   {
@@ -37,7 +37,7 @@ const routes = [
     name: "Desktop",
     component: Desktop,
     meta : {
-      title:"Bilibili OS"
+      title:"LoopRainOS"
     }
   },
   {

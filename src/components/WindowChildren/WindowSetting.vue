@@ -34,8 +34,8 @@
                   <div class=" tw-w-20 tw-h-20 tw-rounded-full tw-overflow-hidden tw-mt-16">
                     <img src="../../assets/images/bilibili.png" alt="" class="tw-bg-red-500">
                   </div>
-                  <div class="tw-mt-3 tw-text-gray-400">Bilibili OS</div>
-                  <div class="tw-text-xl tw-mt-2 tw-tracking-wide"> Bilibili OS is a free and open-source operating system,</div>
+                  <div class="tw-mt-3 tw-text-gray-400">LoopRainOS</div>
+                  <div class="tw-text-xl tw-mt-2 tw-tracking-wide"> LoopRainOS is a free and open-source operating system,</div>
                   <div class="tw-text-lg tw-mt-2 tw-tracking-wide"> Designed for running web applications and browsing the World Wide Web. Buzhidao xieshenmele suibian xie yidian pinyin. </div>
                 </div>
                 <!-- <div ref="github_page" class="tw-w-full tw-h-full tw-items-center tw-flex tw-flex-col tw-justify-center" style="text-align:center" v-if="selected_tag_2 ==='Github Stats'">

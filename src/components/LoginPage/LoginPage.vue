@@ -90,7 +90,7 @@ export default {
       date_date:1,
       date_weekday:0,
       // user_name:"Observer",
-      user_name:"Bilibili",
+      user_name:"LoopRainOS",
       password:"12345678",
       password_answer:"12345678",
       relay:false,
