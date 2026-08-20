@@ -8,6 +8,7 @@ Vue.use(Vuex)
 const defaultAvatar = require('../assets/images/avatar.jpg')
 const defaultWallpaper = require('../assets/images/avatar.jpg')
 const defaultAdminPassword = '12345678'
+const defaultAdminUsername = 'Administrator'
 
 const store = new Vuex.Store({
   state: {
@@ -18,6 +19,7 @@ const store = new Vuex.Store({
     wallpaper_color:localStorage.getItem('looprainos-wallpaper-color') || '#20252b',
     role:sessionStorage.getItem('looprainos-role') || '',
     admin_password:localStorage.getItem('looprainos-admin-password') || defaultAdminPassword,
+    admin_username:localStorage.getItem('looprainos-admin-username') || defaultAdminUsername,
     fullHeight:0,
     fullWidth:0,
     scrollHeight:0,
@@ -72,6 +74,10 @@ const store = new Vuex.Store({
     set_admin_password(state, password){
       state.admin_password = password
       localStorage.setItem('looprainos-admin-password', password)
+    },
+    set_admin_username(state, username){
+      state.admin_username = username
+      localStorage.setItem('looprainos-admin-username', username)
     },
     open_new_window(state, payload){
       let new_uuid = get_uuid()

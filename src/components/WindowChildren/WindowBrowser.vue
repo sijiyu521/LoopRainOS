@@ -49,10 +49,10 @@ export default {
       tipoffsetY:0,
       tipoffsetX:0,
       show_lock_tip:false,
-      input_src:"https://www.bilibili.com/",
-      real_src:'https://www.bilibili.com/',
+      input_src:"https://www.bing.com/",
+      real_src:'https://www.bing.com/',
       no_http:false,
-      href_stack:['https://www.bilibili.com/',],
+      href_stack:['https://www.bing.com/',],
       href_stack_pointer:0,
     }
   },

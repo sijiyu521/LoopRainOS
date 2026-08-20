@@ -9,10 +9,13 @@
     <template v-slot:content>
       <div class=" tw-w-full  tw-h-full tw-rounded-b-2xl tw-overflow-hidden tw-flex
        tw-select-none" @contextmenu.prevent="mr_clicked">
-        <div class=" tw-w-52 tw-bg-white tw-h-full tw-flex tw-flex-col tw-px-3 tw-py-2 tw-flex-none" >
+        <div class="settings-nav tw-w-52 tw-bg-white tw-h-full tw-flex tw-flex-col tw-px-3 tw-py-2 tw-flex-none" >
+          <div class="settings-nav-title">Personal</div>
           <WindowSettingIcon :tag="'Profile'" :img="'profile'" :selected_tag="selected_tag" @click.native="{selected_tag = 'Profile';selected_tag_2 = 'About Me'}"/>
           <WindowSettingIcon :tag="'Skills'" :img="'skills'" :selected_tag="selected_tag"  @click.native="{selected_tag = 'Skills';selected_tag_2 = 'Badges'}"/>
+          <div class="settings-nav-title settings-nav-title-spaced">Appearance</div>
           <WindowSettingIcon :tag="'Wallpaper'" :mdi="'image'" :selected_tag="selected_tag"  @click.native="selected_tag = 'Wallpaper'"/>
+          <div class="settings-nav-title settings-nav-title-spaced">More</div>
           <WindowSettingIcon :tag="'Resume'" :img="'paint'" :selected_tag="selected_tag"  @click.native="selected_tag = 'Resume'"/>
         </div>
         <div class=" tw-flex-grow tw-h-full  tw-p-2">
@@ -31,22 +34,29 @@
             <div class="vl"></div>
             <div class="tw-flex-grow tw-bg-white tw-h-full">
               <div class="wallpaper-settings tw-w-full tw-h-full" v-if="selected_tag === 'Wallpaper'">
-                <div class="tw-text-2xl tw-font-bold">Wallpaper</div>
+                <div class="wallpaper-heading">
+                  <div>
+                    <div class="wallpaper-title">Wallpaper</div>
+                    <div class="wallpaper-subtitle">Choose how your desktop looks</div>
+                  </div>
+                  <div class="wallpaper-current-dot" :style="{backgroundColor: wallpaper_mode === 'solid' ? wallpaper_color : '#d86b8a'}"></div>
+                </div>
                 <div class="wallpaper-modes">
-                  <button class="wallpaper-mode" :class="{'wallpaper-mode-active': wallpaper_mode === 'image'}" @click="set_wallpaper_mode('image')">Image</button>
-                  <button class="wallpaper-mode" :class="{'wallpaper-mode-active': wallpaper_mode === 'solid'}" @click="set_wallpaper_mode('solid')">Solid color</button>
-                  <button class="wallpaper-mode" :class="{'wallpaper-mode-active': wallpaper_mode === 'slideshow'}" @click="set_wallpaper_mode('slideshow')">Slideshow</button>
+                  <button class="wallpaper-mode" :class="{'wallpaper-mode-active': wallpaper_mode === 'image'}" @click="set_wallpaper_mode('image')"><v-icon small>mdi-image</v-icon><span>Image</span><small>One picture</small></button>
+                  <button class="wallpaper-mode" :class="{'wallpaper-mode-active': wallpaper_mode === 'solid'}" @click="set_wallpaper_mode('solid')"><v-icon small>mdi-format-color-fill</v-icon><span>Solid color</span><small>Simple and calm</small></button>
+                  <button class="wallpaper-mode" :class="{'wallpaper-mode-active': wallpaper_mode === 'slideshow'}" @click="set_wallpaper_mode('slideshow')"><v-icon small>mdi-play-circle-outline</v-icon><span>Slideshow</span><small>Refresh every 10s</small></button>
                 </div>
                 <div v-if="wallpaper_mode === 'image'" class="wallpaper-control">
                   <input ref="wallpaper_input" type="file" accept="image/png,image/jpeg,image/webp,image/gif" class="tw-hidden" @change="wallpaper_selected">
-                  <button class="setting-action" @click="choose_wallpaper">Choose image</button>
                   <img :src="wallpaper_image" alt="Wallpaper preview" class="wallpaper-preview">
+                  <button class="setting-action" @click="choose_wallpaper"><v-icon small>mdi-upload</v-icon>Choose image</button>
                 </div>
                 <div v-if="wallpaper_mode === 'solid'" class="wallpaper-control">
-                  <label class="tw-text-sm tw-text-gray-600">Background color</label>
-                  <input type="color" :value="wallpaper_color" @input="wallpaper_color_changed">
+                  <div class="solid-preview" :style="{backgroundColor: wallpaper_color}"></div>
+                  <label class="color-label">Background color <span>{{wallpaper_color}}</span></label>
+                  <input class="color-picker" type="color" :value="wallpaper_color" @input="wallpaper_color_changed">
                 </div>
-                <div v-if="wallpaper_mode === 'slideshow'" class="tw-text-sm tw-text-gray-500">Images are refreshed automatically from the wallpaper service.</div>
+                <div v-if="wallpaper_mode === 'slideshow'" class="slideshow-note"><v-icon small>mdi-cloud-refresh</v-icon> Images refresh automatically from the wallpaper service.</div>
               </div>
               <div class=" tw-w-full tw-h-full" v-if="selected_tag === 'Profile'">
                 <div ref="overall_page" class="tw-w-full tw-h-full tw-items-center tw-flex tw-flex-col" style="text-align:center" v-if="selected_tag_2 ==='About Me'">
@@ -55,6 +65,14 @@
                   </div>
                   <input ref="avatar_input" type="file" accept="image/png,image/jpeg,image/webp,image/gif" class="tw-hidden" @change="avatar_selected">
                   <button class="tw-mt-3 tw-px-3 tw-py-1 tw-rounded-lg tw-bg-gray-200 hover:tw-bg-gray-300 tw-text-sm tw-outline-none" @click="choose_avatar">Change avatar</button>
+                  <div class="username-editor">
+                    <label class="color-label">Administrator name</label>
+                    <div class="username-row">
+                      <input v-model="username_draft" class="password-input" maxlength="24" @keyup.enter="save_username">
+                      <button class="setting-action" @click="save_username">Save</button>
+                    </div>
+                    <div v-if="username_message" class="tw-text-xs tw-text-gray-500">{{username_message}}</div>
+                  </div>
                   <div class="tw-mt-3 tw-text-gray-400">LoopRainOS</div>
                   <div class="tw-text-xl tw-mt-2 tw-tracking-wide"> LoopRainOS is a free and open-source operating system,</div>
                   <div class="tw-text-lg tw-mt-2 tw-tracking-wide"> Designed for running web applications and browsing the World Wide Web. Buzhidao xieshenmele suibian xie yidian pinyin. </div>
@@ -134,6 +152,8 @@ export default {
     return {
       selected_tag:"Profile",
       selected_tag_2:"About Me",
+      username_draft:'',
+      username_message:'',
     }
   },
   props:{
@@ -160,7 +180,7 @@ export default {
   created(){
   },
   mounted(){
-    
+    this.username_draft = this.admin_username
   },
   watch:{
   },
@@ -176,9 +196,22 @@ export default {
     },
     wallpaper_color(){
       return this.$store.state.wallpaper_color
+    },
+    admin_username(){
+      return this.$store.state.admin_username
     }
   },
   methods:{
+    save_username(){
+      let username = this.username_draft.trim()
+      if (username.length < 2) {
+        this.username_message = 'Name must be at least 2 characters.'
+        return
+      }
+      this.$store.commit('set_admin_username', username)
+      this.username_draft = username
+      this.username_message = 'Administrator name updated.'
+    },
     choose_avatar(){
       this.$refs.avatar_input.click()
     },
@@ -234,6 +267,23 @@ export default {
 </script>
 
 <style scoped>
+.settings-nav {
+  border-right: 1px solid #edf1f2;
+}
+
+.settings-nav-title {
+  padding: 8px 12px 4px;
+  color: #90a4ae;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.settings-nav-title-spaced {
+  margin-top: 14px;
+}
+
 .vl {
   border-left: 1.5px solid rgba(244,244,244);
   height: 100%;
@@ -244,5 +294,154 @@ export default {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.wallpaper-settings {
+  padding: 28px;
+  overflow: auto;
+  color: #263238;
+}
+
+.wallpaper-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.wallpaper-title {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.wallpaper-subtitle {
+  margin-top: 4px;
+  color: #78909c;
+  font-size: 13px;
+}
+
+.wallpaper-current-dot {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 4px solid #eceff1;
+}
+
+.wallpaper-modes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.wallpaper-mode {
+  min-height: 92px;
+  padding: 12px;
+  border: 1px solid #e0e6e9;
+  border-radius: 10px;
+  background: #fafcfd;
+  color: #546e7a;
+  text-align: left;
+  outline: none;
+}
+
+.wallpaper-mode span,
+.wallpaper-mode small {
+  display: block;
+}
+
+.wallpaper-mode span {
+  margin-top: 8px;
+  color: #263238;
+  font-weight: 700;
+}
+
+.wallpaper-mode small {
+  margin-top: 4px;
+  color: #90a4ae;
+  font-size: 11px;
+}
+
+.wallpaper-mode:hover,
+.wallpaper-mode-active {
+  border-color: #d86b8a;
+  background: #fff3f6;
+  color: #c14f72;
+}
+
+.wallpaper-control {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 18px;
+  padding: 14px;
+  border-radius: 10px;
+  background: #f5f8f9;
+}
+
+.wallpaper-preview {
+  width: 170px;
+  height: 96px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.solid-preview {
+  width: 170px;
+  height: 96px;
+  border-radius: 8px;
+}
+
+.color-label {
+  color: #607d8b;
+  font-size: 13px;
+}
+
+.color-label span {
+  margin-left: 8px;
+  color: #263238;
+  font-family: monospace;
+}
+
+.color-picker {
+  width: 42px;
+  height: 32px;
+  border: 0;
+  background: transparent;
+}
+
+.slideshow-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 18px;
+  color: #607d8b;
+  font-size: 13px;
+}
+
+.username-editor {
+  width: 280px;
+  margin-top: 20px;
+}
+
+.username-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.setting-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 12px;
+  border-radius: 7px;
+  background: #eceff1;
+  color: #37474f;
+  font-size: 12px;
+  outline: none;
+}
+
+.setting-action:hover {
+  background: #dfe5e8;
 }
 </style>

@@ -96,7 +96,6 @@ export default {
       // user_name:"Observer",
       user_name:"Administrator",
       password:"12345678",
-      password_answer:"12345678",
       relay:false,
       show_loading_bar:false,
       button_shaking:false,
@@ -105,6 +104,7 @@ export default {
     }
   },
   created(){
+    this.user_name = this.$store.state.admin_username
     this.refresh_time()
     window.setInterval(() => {
       this.refresh_time()
@@ -128,6 +128,9 @@ export default {
   computed:{
     avatar(){
       return this.$store.state.avatar
+    },
+    password_answer(){
+      return this.$store.state.admin_password
     },
     date_weekday_display(){
       return weekdays[this.date_weekday]
@@ -170,8 +173,8 @@ export default {
     },
     select_login_mode(mode){
       this.login_mode = mode
-      this.password = mode === 'admin' ? '12345678' : ''
-      this.user_name = mode === 'admin' ? 'Administrator' : 'Guest'
+      this.password = mode === 'admin' ? '' : ''
+      this.user_name = mode === 'admin' ? this.$store.state.admin_username : 'Guest'
       this.login_locked = false
       this.button_shaking = false
       this.$nextTick(() => {
