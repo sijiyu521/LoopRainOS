@@ -7,7 +7,7 @@
     <div ref="content" class="tw-flex tw-flex-col tw-w-full tw-h-full">
       <div ref="background_image" class="tw-absolute tw-w-full tw-h-full tw-flex tw-flex-row tw-justify-center tw-items-center">
           <div class="tw-w-140"></div>
-          <img src="../../assets/images/deepin_3.png" alt="" class="tw-w-160" style="opacity:.03;min-width:600px" @load="bgloaded">
+          <img src="../../assets/images/avatar.jpg" alt="" class="tw-w-160" style="opacity:.03;min-width:600px" @load="bgloaded">
       </div>
       <div ref="header" class="tw-w-full tw-h-32 tw-flex-none tw-flex tw-flex-col tw-items-center tw-justify-center  tw-z-10">
         <div class="tw-text-4xl tw-tracking-wider tw-light tw-font-sans">{{PrefixZero(date_hour,2)}}:{{PrefixZero(date_minute,2)}}</div>
@@ -21,7 +21,7 @@
               <div class="ratio-container">
                 <div class="ratio-content tw-rounded-lg 
                 tw-bg-center
-                tw-bg-cover" :style="{ backgroundImage: 'url(' + require('@/assets/images/avatar.jpg') + ')' }">
+                tw-bg-cover" :style="{ backgroundImage: 'url(' + avatar + ')' }">
                 </div>
               </div>
             </div>
@@ -30,7 +30,7 @@
           <div class=" tw-absolute tw-w-72 tw-h-40 " style="pointer-events:none;">
             <div ref="infinite_bar"  class="tw-absolute tw-rounded-lg " style="bottom:12px;height:38px;width:264px;left:12px" :class="{'process-animation':relay,'tw-hidden':!show_loading_bar}"> </div>
           </div>
-          <div class="tw-h-full tw-flex tw-justify-center tw-items-center tw-py-3 tw-px-3">
+          <div class="tw-h-full tw-flex tw-justify-center tw-items-center tw-py-3 tw-px-3" v-if="login_mode === 'admin'">
             <input ref="password_input_bar" v-model="password" @keyup.enter="login_clicked" type="password" placeholder="Enter your password" autofocus autocomplete class="tw-w-full tw-h-full tw-rounded-lg" style="background-color:rgba(242,120,159);outline-color: rgba(242,120,159);text-align: center">
           </div>
         </div>
@@ -54,6 +54,9 @@
         <div class="tw-h-full flex-none tw-w-76 tw-flex tw-justify-center tw-items-center tw-pr-2" style="min-width:300px">
           <button class="tw-rounded-full tw-w-12 tw-h-12 tw-bg-mygray-light hover:tw-bg-mygray-dark active:tw-bg-mygray-darker tw-flex tw-justify-center tw-items-center  tw-outline-none" @click="show_keyboard_clicked()">
             <v-icon class="tw-text-gray-100 "  >mdi-keyboard</v-icon>
+          </button>
+          <button class="tw-rounded-full tw-w-12 tw-h-12 tw-bg-mygray-light hover:tw-bg-mygray-dark active:tw-bg-mygray-darker tw-flex tw-justify-center tw-items-center tw-outline-none ml-8" :title="login_mode === 'admin' ? 'Switch to guest login' : 'Switch to administrator login'" @click="select_login_mode(login_mode === 'admin' ? 'guest' : 'admin')">
+            <v-icon class="tw-text-gray-100">mdi-account-switch</v-icon>
           </button>
           <button class="tw-rounded-full tw-w-12 tw-h-12 tw-bg-mygray-light hover:tw-bg-mygray-dark active:tw-bg-mygray-darker ml-8 tw-flex tw-justify-center tw-items-center tw-outline-none" @click="show_middle_clicked">
             <v-icon class="tw-text-gray-100 ">mdi-power</v-icon>
@@ -81,6 +84,7 @@ export default {
   data(){
     return {
       login_locked:false,
+      login_mode:'admin',
       show_keyboard:false,
       show_middle:true,
       date_hour:0,
@@ -90,7 +94,7 @@ export default {
       date_date:1,
       date_weekday:0,
       // user_name:"Observer",
-      user_name:"LoopRainOS",
+      user_name:"Administrator",
       password:"12345678",
       password_answer:"12345678",
       relay:false,
@@ -122,6 +126,9 @@ export default {
   watch:{
   },
   computed:{
+    avatar(){
+      return this.$store.state.avatar
+    },
     date_weekday_display(){
       return weekdays[this.date_weekday]
     }
@@ -131,22 +138,13 @@ export default {
       return (Array(n).join(0) + num).slice(-n);
     },
     login_clicked(){
+      if (this.login_mode === 'guest') {
+        this.enter_system()
+        return
+      }
       // pw check
       if (this.password === this.password_answer) {
-        // correct password
-        this.login_locked = false;
-        this.show_loading_bar = true
-        window.setTimeout(()=>{
-          this.show_loading_bar = false
-          clearInterval(this.timer)
-          clearTimeout(this.timer2)
-          this.$router.push({
-            name: 'Desktop',
-          })
-          // full screeen
-          let elem = document.getElementById('app')
-          elem.requestFullscreen();
-        },1800)
+        this.enter_system()
         return
       } else if (this.password === "") {
         this.login_locked = true;
@@ -170,8 +168,35 @@ export default {
         },3800)
       }
     },
+    select_login_mode(mode){
+      this.login_mode = mode
+      this.password = mode === 'admin' ? '12345678' : ''
+      this.user_name = mode === 'admin' ? 'Administrator' : 'Guest'
+      this.login_locked = false
+      this.button_shaking = false
+      this.$nextTick(() => {
+        if (mode === 'admin' && this.$refs.password_input_bar) {
+          this.$refs.password_input_bar.focus()
+        }
+      })
+    },
+    enter_system(){
+      this.login_locked = false
+      this.$store.commit('set_role', this.login_mode)
+      this.show_loading_bar = true
+      window.setTimeout(()=>{
+        this.show_loading_bar = false
+        clearInterval(this.timer)
+        clearTimeout(this.timer2)
+        this.$router.push({
+          name: 'Desktop',
+        })
+        let elem = document.getElementById('app')
+        elem.requestFullscreen()
+      },1800)
+    },
     vkey_pressed(key, upperscale){
-      if (this.login_locked) {
+      if (this.login_locked || this.login_mode === 'guest') {
         return
       }
       // functional keys only enter-left-right-delete has function

@@ -5,9 +5,19 @@ import {get_uuid} from '../plugins/utils'
 
 Vue.use(Vuex)
 
+const defaultAvatar = require('../assets/images/avatar.jpg')
+const defaultWallpaper = require('../assets/images/avatar.jpg')
+const defaultAdminPassword = '12345678'
+
 const store = new Vuex.Store({
   state: {
     authed:JSON.parse(cget('auth')||'false'),
+    avatar:localStorage.getItem('looprainos-avatar') || defaultAvatar,
+    wallpaper_mode:localStorage.getItem('looprainos-wallpaper-mode') || 'slideshow',
+    wallpaper_image:localStorage.getItem('looprainos-wallpaper-image') || defaultWallpaper,
+    wallpaper_color:localStorage.getItem('looprainos-wallpaper-color') || '#20252b',
+    role:sessionStorage.getItem('looprainos-role') || '',
+    admin_password:localStorage.getItem('looprainos-admin-password') || defaultAdminPassword,
     fullHeight:0,
     fullWidth:0,
     scrollHeight:0,
@@ -35,6 +45,34 @@ const store = new Vuex.Store({
     display_article_num:0,
   },
   mutations: {
+    set_role(state, role){
+      state.role = role
+      sessionStorage.setItem('looprainos-role', role)
+    },
+    clear_role(state){
+      state.role = ''
+      sessionStorage.removeItem('looprainos-role')
+    },
+    set_avatar(state, avatar){
+      state.avatar = avatar
+      localStorage.setItem('looprainos-avatar', avatar)
+    },
+    set_wallpaper_mode(state, mode){
+      state.wallpaper_mode = mode
+      localStorage.setItem('looprainos-wallpaper-mode', mode)
+    },
+    set_wallpaper_image(state, image){
+      state.wallpaper_image = image
+      localStorage.setItem('looprainos-wallpaper-image', image)
+    },
+    set_wallpaper_color(state, color){
+      state.wallpaper_color = color
+      localStorage.setItem('looprainos-wallpaper-color', color)
+    },
+    set_admin_password(state, password){
+      state.admin_password = password
+      localStorage.setItem('looprainos-admin-password', password)
+    },
     open_new_window(state, payload){
       let new_uuid = get_uuid()
       let obj = {

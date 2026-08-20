@@ -29,7 +29,8 @@ const routes = [
     name: "DesktopWithPost",
     component: Desktop,
     meta : {
-      title:"LoopRainOS"
+      title:"LoopRainOS",
+      requiresAuth:true
     }
   },
   {
@@ -37,7 +38,8 @@ const routes = [
     name: "Desktop",
     component: Desktop,
     meta : {
-      title:"LoopRainOS"
+      title:"LoopRainOS",
+      requiresAuth:true
     }
   },
   {
@@ -53,6 +55,10 @@ const router = new VueRouter({
 })
 
 router.beforeEach((to, from, next) => {
+  if (to.matched.some(record => record.meta.requiresAuth) && !store.state.role) {
+    next({name:'LoginPage'})
+    return
+  }
   store.commit('show_interlude')
   next()
 })

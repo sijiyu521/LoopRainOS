@@ -2,7 +2,9 @@
   <div class=" tw-antialiased tw-w-screen tw-h-screen tw-overflow-hidden tw-flex tw-justify-center tw-items-center" style="min-height:600px;min-width:800px" >
     <div class="tw-w-full tw-h-full tw-relative"  >
       <div ref="background" class="tw-relative tw-pb-9/16 tw-h-full tw-select-none">
-        <img src="../../assets/images/desktop_1.jpg" alt="" class="tw-absolute tw-h-full tw-object-cover" @load="bgloaded"/>
+        <div v-if="wallpaperMode === 'solid'" class="wallpaper-solid tw-absolute" :style="{backgroundColor: wallpaperColor}"></div>
+        <img v-else :src="currentWallpaper" alt="" class="wallpaper-image tw-absolute" @load="bgloaded"/>
+        <img v-if="wallpaperMode === 'slideshow' && nextWallpaper" :src="nextWallpaper" alt="" class="wallpaper-image wallpaper-fade tw-absolute" :class="{'wallpaper-fade-visible': wallpaperFadeVisible}" @load="wallpaperLoaded" @error="wallpaperLoadFailed"/>
       </div>
     </div>
     <div ref="frontground" class="tw-absolute tw-w-full tw-h-full tw-z-10 tw-overflow-hidden" style="top:0;left:0;pointer-events:none">
@@ -53,6 +55,10 @@ import KeyBoardMoveIcon from '../Keyboard/KeyBoardMoveIcon.vue'
 import ContextMenu from '../ContextMenu/ContextMenu.vue'
 import ContextMenuBottomBar from '../ContextMenu/ContextMenuBottomBar.vue'
 
+const wallpaperApiUrl = 'https://www.loliapi.com/acg/'
+
+const getWallpaperUrl = () => wallpaperApiUrl + '?t=' + Date.now()
+
 export default {
   name: 'Desktop',
   components: {
@@ -74,6 +80,11 @@ export default {
   data(){
     return {
       map:[],
+      currentWallpaper: this.$store.state.wallpaper_image,
+      nextWallpaper: '',
+      wallpaperFadeVisible: false,
+      wallpaperTimer: null,
+      wallpaperTransitionTimer: null,
     }
   },
   created(){
@@ -89,8 +100,21 @@ export default {
     })
   },
   mounted(){
+    this.syncWallpaperMode()
+  },
+  beforeDestroy(){
+    window.clearInterval(this.wallpaperTimer)
+    window.clearTimeout(this.wallpaperTransitionTimer)
   },
   watch:{
+    wallpaperMode(mode) {
+      this.syncWallpaperMode(mode)
+    },
+    wallpaperImage(image) {
+      if (this.wallpaperMode === 'image') {
+        this.currentWallpaper = image
+      }
+    },
     desktop_keyboard_show(val) {
       if (val) {
         this.$nextTick(()=>{
@@ -101,6 +125,15 @@ export default {
     }
   },
   computed:{
+    wallpaperMode(){
+      return this.$store.state.wallpaper_mode
+    },
+    wallpaperImage(){
+      return this.$store.state.wallpaper_image
+    },
+    wallpaperColor(){
+      return this.$store.state.wallpaper_color
+    },
     window_list(){
       return this.$store.state.window_list
     },
@@ -112,6 +145,35 @@ export default {
     },
   },
   methods:{
+    syncWallpaperMode(mode = this.wallpaperMode){
+      window.clearInterval(this.wallpaperTimer)
+      this.wallpaperTimer = null
+      this.nextWallpaper = ''
+      this.wallpaperFadeVisible = false
+      if (mode === 'slideshow') {
+        this.currentWallpaper = getWallpaperUrl()
+        this.wallpaperTimer = window.setInterval(this.changeWallpaper, 10000)
+      } else if (mode === 'image') {
+        this.currentWallpaper = this.wallpaperImage
+      }
+    },
+    changeWallpaper(){
+      window.clearTimeout(this.wallpaperTransitionTimer)
+      this.nextWallpaper = getWallpaperUrl()
+      this.wallpaperFadeVisible = false
+    },
+    wallpaperLoaded(){
+      this.wallpaperFadeVisible = true
+      this.wallpaperTransitionTimer = window.setTimeout(() => {
+        this.currentWallpaper = this.nextWallpaper
+        this.nextWallpaper = ''
+        this.wallpaperFadeVisible = false
+      }, 800)
+    },
+    wallpaperLoadFailed(){
+      this.nextWallpaper = ''
+      this.wallpaperFadeVisible = false
+    },
     background_clicked(){
       this.$store.commit('close_side_bar')
       this.$store.commit('refresh_window_focus', {uuid:""})
@@ -211,5 +273,21 @@ export default {
 </script>
 
 <style scoped>
+.wallpaper-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.wallpaper-fade {
+  opacity: 0;
+  transition: opacity 800ms ease-in-out;
+  z-index: 1;
+}
+
+.wallpaper-fade-visible {
+  opacity: 1;
+}
 
 </style>

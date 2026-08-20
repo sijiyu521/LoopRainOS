@@ -12,6 +12,7 @@
         <div class=" tw-w-52 tw-bg-white tw-h-full tw-flex tw-flex-col tw-px-3 tw-py-2 tw-flex-none" >
           <WindowSettingIcon :tag="'Profile'" :img="'profile'" :selected_tag="selected_tag" @click.native="{selected_tag = 'Profile';selected_tag_2 = 'About Me'}"/>
           <WindowSettingIcon :tag="'Skills'" :img="'skills'" :selected_tag="selected_tag"  @click.native="{selected_tag = 'Skills';selected_tag_2 = 'Badges'}"/>
+          <WindowSettingIcon :tag="'Wallpaper'" :mdi="'image'" :selected_tag="selected_tag"  @click.native="selected_tag = 'Wallpaper'"/>
           <WindowSettingIcon :tag="'Resume'" :img="'paint'" :selected_tag="selected_tag"  @click.native="selected_tag = 'Resume'"/>
         </div>
         <div class=" tw-flex-grow tw-h-full  tw-p-2">
@@ -29,11 +30,31 @@
             </div>
             <div class="vl"></div>
             <div class="tw-flex-grow tw-bg-white tw-h-full">
+              <div class="wallpaper-settings tw-w-full tw-h-full" v-if="selected_tag === 'Wallpaper'">
+                <div class="tw-text-2xl tw-font-bold">Wallpaper</div>
+                <div class="wallpaper-modes">
+                  <button class="wallpaper-mode" :class="{'wallpaper-mode-active': wallpaper_mode === 'image'}" @click="set_wallpaper_mode('image')">Image</button>
+                  <button class="wallpaper-mode" :class="{'wallpaper-mode-active': wallpaper_mode === 'solid'}" @click="set_wallpaper_mode('solid')">Solid color</button>
+                  <button class="wallpaper-mode" :class="{'wallpaper-mode-active': wallpaper_mode === 'slideshow'}" @click="set_wallpaper_mode('slideshow')">Slideshow</button>
+                </div>
+                <div v-if="wallpaper_mode === 'image'" class="wallpaper-control">
+                  <input ref="wallpaper_input" type="file" accept="image/png,image/jpeg,image/webp,image/gif" class="tw-hidden" @change="wallpaper_selected">
+                  <button class="setting-action" @click="choose_wallpaper">Choose image</button>
+                  <img :src="wallpaper_image" alt="Wallpaper preview" class="wallpaper-preview">
+                </div>
+                <div v-if="wallpaper_mode === 'solid'" class="wallpaper-control">
+                  <label class="tw-text-sm tw-text-gray-600">Background color</label>
+                  <input type="color" :value="wallpaper_color" @input="wallpaper_color_changed">
+                </div>
+                <div v-if="wallpaper_mode === 'slideshow'" class="tw-text-sm tw-text-gray-500">Images are refreshed automatically from the wallpaper service.</div>
+              </div>
               <div class=" tw-w-full tw-h-full" v-if="selected_tag === 'Profile'">
                 <div ref="overall_page" class="tw-w-full tw-h-full tw-items-center tw-flex tw-flex-col" style="text-align:center" v-if="selected_tag_2 ==='About Me'">
-                  <div class=" tw-w-20 tw-h-20 tw-rounded-full tw-overflow-hidden tw-mt-16">
-                    <img src="../../assets/images/bilibili.png" alt="" class="tw-bg-red-500">
+                  <div class="tw-w-20 tw-h-20 tw-rounded-full tw-overflow-hidden tw-mt-16">
+                    <img :src="avatar" alt="User avatar" class="avatar-image">
                   </div>
+                  <input ref="avatar_input" type="file" accept="image/png,image/jpeg,image/webp,image/gif" class="tw-hidden" @change="avatar_selected">
+                  <button class="tw-mt-3 tw-px-3 tw-py-1 tw-rounded-lg tw-bg-gray-200 hover:tw-bg-gray-300 tw-text-sm tw-outline-none" @click="choose_avatar">Change avatar</button>
                   <div class="tw-mt-3 tw-text-gray-400">LoopRainOS</div>
                   <div class="tw-text-xl tw-mt-2 tw-tracking-wide"> LoopRainOS is a free and open-source operating system,</div>
                   <div class="tw-text-lg tw-mt-2 tw-tracking-wide"> Designed for running web applications and browsing the World Wide Web. Buzhidao xieshenmele suibian xie yidian pinyin. </div>
@@ -144,8 +165,67 @@ export default {
   watch:{
   },
   computed:{
+    avatar(){
+      return this.$store.state.avatar
+    },
+    wallpaper_mode(){
+      return this.$store.state.wallpaper_mode
+    },
+    wallpaper_image(){
+      return this.$store.state.wallpaper_image
+    },
+    wallpaper_color(){
+      return this.$store.state.wallpaper_color
+    }
   },
   methods:{
+    choose_avatar(){
+      this.$refs.avatar_input.click()
+    },
+    avatar_selected(event){
+      let file = event.target.files[0]
+      if (!file || !file.type.startsWith('image/')) {
+        return
+      }
+      if (file.size > 4 * 1024 * 1024) {
+        window.alert('Please choose an image smaller than 4 MB.')
+        event.target.value = ''
+        return
+      }
+      let reader = new FileReader()
+      reader.onload = () => {
+        this.$store.commit('set_avatar', reader.result)
+        event.target.value = ''
+      }
+      reader.readAsDataURL(file)
+    },
+    set_wallpaper_mode(mode){
+      this.$store.commit('set_wallpaper_mode', mode)
+    },
+    choose_wallpaper(){
+      this.$refs.wallpaper_input.click()
+    },
+    wallpaper_selected(event){
+      let file = event.target.files[0]
+      if (!file || !file.type.startsWith('image/')) {
+        return
+      }
+      if (file.size > 6 * 1024 * 1024) {
+        window.alert('Please choose an image smaller than 6 MB.')
+        event.target.value = ''
+        return
+      }
+      let reader = new FileReader()
+      reader.onload = () => {
+        this.$store.commit('set_wallpaper_image', reader.result)
+        this.$store.commit('set_wallpaper_mode', 'image')
+        event.target.value = ''
+      }
+      reader.readAsDataURL(file)
+    },
+    wallpaper_color_changed(event){
+      this.$store.commit('set_wallpaper_color', event.target.value)
+    },
     mr_clicked(){
       this.$store.commit('show_context_menu')
     }
@@ -158,5 +238,11 @@ export default {
   border-left: 1.5px solid rgba(244,244,244);
   height: 100%;
   left: 50%;
+}
+
+.avatar-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 </style>

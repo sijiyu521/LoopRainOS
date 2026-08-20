@@ -9,7 +9,7 @@
       <ContextMenuButton  :text="'Open in Terminal'" @click.native="terminal_clicked"/>
       <div class=" tw-w-full" style="height:1.5px;background-color:rgba(188,188,188,1)"></div>
       <ContextMenuButton disabled :text="'Wallpapers'"/>
-      <ContextMenuButton  :text="'Settings'" @click.native="settings_clicked"/>
+      <ContextMenuButton v-if="isAdmin" :text="'Settings'" @click.native="settings_clicked"/>
       <ContextMenuButton  :text="'HomePage'" @click.native="open_project"/>
     </div>
   </div>
@@ -55,6 +55,9 @@ export default {
     },
     context_menu_y(){
       return this.$store.state.context_menu_y
+    },
+    isAdmin(){
+      return this.$store.state.role === 'admin'
     }
   },
   methods:{
