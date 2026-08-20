@@ -95,7 +95,7 @@ export default {
       date_weekday:0,
       // user_name:"Observer",
       user_name:"Administrator",
-      password:"12345678",
+      password:"",
       relay:false,
       show_loading_bar:false,
       button_shaking:false,
@@ -149,16 +149,6 @@ export default {
       if (this.password === this.password_answer) {
         this.enter_system()
         return
-      } else if (this.password === "") {
-        this.login_locked = true;
-        for (let i=0;i<this.password_answer.length;i++) {
-          window.setTimeout(() => {
-            this.password += this.password_answer[i]
-            if (i === (this.password_answer.length - 1)) {
-              this.login_clicked()
-            }
-          }, 100 * i)
-        }
       } else {
         // wrong password
         this.show_loading_bar = true
@@ -186,17 +176,22 @@ export default {
     enter_system(){
       this.login_locked = false
       this.$store.commit('set_role', this.login_mode)
-      this.show_loading_bar = true
-      window.setTimeout(()=>{
-        this.show_loading_bar = false
-        clearInterval(this.timer)
-        clearTimeout(this.timer2)
-        this.$router.push({
-          name: 'Desktop',
-        })
+      this.show_loading_bar = false
+      clearInterval(this.timer)
+      clearTimeout(this.timer2)
+      this.$router.push({
+        name: 'Desktop',
+      }).then(() => {
         let elem = document.getElementById('app')
-        elem.requestFullscreen()
-      },1800)
+        if (elem && elem.requestFullscreen) {
+          let fullscreen_request = elem.requestFullscreen()
+          if (fullscreen_request && fullscreen_request.catch) {
+            fullscreen_request.catch(() => {})
+          }
+        }
+      }).catch(() => {
+        this.login_locked = false
+      })
     },
     vkey_pressed(key, upperscale){
       if (this.login_locked || this.login_mode === 'guest') {

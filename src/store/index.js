@@ -10,6 +10,10 @@ const defaultWallpaper = require('../assets/images/avatar.jpg')
 const defaultAdminPassword = '12345678'
 const defaultAdminUsername = 'Administrator'
 
+const read_file_names = () => JSON.parse(localStorage.getItem('looprainos-file-names') || '{}')
+
+const write_file_names = (names) => localStorage.setItem('looprainos-file-names', JSON.stringify(names))
+
 const store = new Vuex.Store({
   state: {
     authed:JSON.parse(cget('auth')||'false'),
@@ -78,6 +82,45 @@ const store = new Vuex.Store({
     set_admin_username(state, username){
       state.admin_username = username
       localStorage.setItem('looprainos-admin-username', username)
+    },
+    rename_file(state, payload){
+      if (state.role !== 'admin' || !payload.path || !payload.name) {
+        return
+      }
+      let rename = (items) => {
+        for (let item of items) {
+          if (item.path === payload.path) {
+            item.name = payload.name
+            return true
+          }
+          if (item.children && rename(item.children)) {
+            return true
+          }
+        }
+        return false
+      }
+      if (rename(state.filemap)) {
+        let names = read_file_names()
+        names[payload.path] = payload.name
+        write_file_names(names)
+      }
+    },
+    create_file(state, payload){
+      if (state.role !== 'admin' || !payload.path || !payload.name) {
+        return
+      }
+      let file = {
+        name: payload.name,
+        path: payload.path,
+        size: 0,
+        lastedittime: Math.floor(Date.now() / 1000),
+        title: '',
+        abstract: '',
+      }
+      state.filemap.push(file)
+      let custom_files = JSON.parse(localStorage.getItem('looprainos-custom-files') || '[]')
+      custom_files.push(file)
+      localStorage.setItem('looprainos-custom-files', JSON.stringify(custom_files))
     },
     open_new_window(state, payload){
       let new_uuid = get_uuid()

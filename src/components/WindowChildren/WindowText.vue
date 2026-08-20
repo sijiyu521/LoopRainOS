@@ -9,6 +9,9 @@
         <div class="tw-h-9 tw-px-3  tw-flex tw-items-center tw-justify-center tw-bg-mygray-b3  tw-rounded-lg tw-ml-3 hover:tw-bg-mygray-b1 tw-text-mygray-b8" style="pointer-events:auto;">
           <v-icon small>mdi-plus</v-icon>
         </div>
+        <button v-if="is_admin" class="tw-h-9 tw-px-3 tw-ml-2 tw-rounded-lg tw-bg-mygray-b3 hover:tw-bg-mygray-b1 tw-text-mygray-b8" @click.stop="rename_file" title="Rename file">
+          <v-icon small>mdi-pencil</v-icon>
+        </button>
         <!-- <div class=" tw-ml-4 tw-font-bold tw-tracking-wider"> {{filename}} </div> -->
       </div>
     </template>
@@ -49,8 +52,15 @@
           <div class="tw-w-8 tw-h-full tw-px-1.5 tw-py-1" style="background-color:#f0f0f0;color:#a1b9cf">
             <span class="tw-hidden">1</span>
           </div>
-          <div class="tw-w-full  tw-bg-white tw-pl-5 tw-pr-3 tw-py-1.5 change-srollbar" style="overflow:auto" :style="{'height': cont_height +'px'}">
-            <markdown-it-vue class="md-body zoomined-frame" :content="content" :style="{'width':cont_width+'px !important'}" :options="{markdownIt: {html: true}}"/>
+            <div class="tw-w-full tw-bg-white tw-pl-5 tw-pr-3 tw-py-1.5 change-srollbar" style="overflow:auto" :style="{'height': cont_height +'px'}">
+              <div v-if="can_edit" class="blog-editor">
+                <textarea v-model="draft_content" class="blog-editor-input" spellcheck="false"></textarea>
+                <div class="blog-editor-actions">
+                  <button class="setting-action" @click="save_blog">Save blog</button>
+                  <span v-if="save_message" class="blog-save-message">{{save_message}}</span>
+                </div>
+              </div>
+              <markdown-it-vue v-else class="md-body zoomined-frame" :content="content" :style="{'width':cont_width+'px !important'}" :options="{markdownIt: {html: true}}"/>
           </div>
         </div>
       </div>
@@ -82,6 +92,8 @@ export default {
       cont_width_margin: 76,
       loaded:false,
       copy_lock:false,
+      draft_content:'',
+      save_message:'',
     }
   },
   props:{
@@ -116,6 +128,14 @@ export default {
   created(){
   },
   mounted(){
+    if (this.filesrc.indexOf('local:') === 0) {
+      this.content = localStorage.getItem(this.filesrc) || ''
+      this.draft_content = this.content
+      this.compute_line_col_num(this.content)
+      this.$store.commit('refresh_window_focus', {uuid:this.uuid})
+      this.loaded = true
+      return
+    }
     this.$axios.raw(this.filesrc)
     .then((res) => {
       document.body.style.cursor='normal'
@@ -124,7 +144,8 @@ export default {
         console.log("Load error, got string returned")
         this.content = error_message
       }
-      this.content = res.data.data
+      this.content = localStorage.getItem(this.blog_storage_key) || res.data.data || ''
+      this.draft_content = this.content
       console.log(res.data.data)
       this.compute_line_col_num(res.data.data)
       this.$store.commit('refresh_window_focus', {uuid:this.uuid})
@@ -143,6 +164,15 @@ export default {
   computed:{
     global_focus(){
       return this.$store.state.current_focus
+    },
+    can_edit(){
+      return this.$store.state.role === 'admin' && /\.md$/i.test(this.filename)
+    },
+    is_admin(){
+      return this.$store.state.role === 'admin'
+    },
+    blog_storage_key(){
+      return 'looprainos-blog-' + this.filesrc
     }
   },
   methods:{
@@ -175,6 +205,29 @@ export default {
     },
     window_width_changed(val){
       this.cont_width = val - this.cont_width_margin
+    },
+    save_blog(){
+      if (!this.can_edit) {
+        return
+      }
+      localStorage.setItem(this.blog_storage_key, this.draft_content)
+      this.content = this.draft_content
+      this.save_message = 'Blog saved locally.'
+      window.setTimeout(() => {
+        this.save_message = ''
+      }, 2000)
+    },
+    rename_file(){
+      if (!this.is_admin) {
+        return
+      }
+      let next_name = window.prompt('New file name', this.filename)
+      if (!next_name || next_name.trim() === this.filename) {
+        return
+      }
+      next_name = next_name.trim()
+      this.$store.commit('rename_file', {path:this.filesrc, name:next_name})
+      this.$emit('renamed', next_name)
     },
     title_clicked(){
       let background = document.getElementsByClassName("realbackground")[0]
@@ -214,6 +267,35 @@ export default {
 .change-srollbar{
   left:0;
   margin-right:3px;
+}
+
+.blog-editor {
+  width: 100%;
+  min-height: 100%;
+}
+
+.blog-editor-input {
+  width: 100%;
+  min-height: 430px;
+  padding: 12px;
+  border: 1px solid #dfe5e8;
+  border-radius: 6px;
+  color: #263238;
+  font-family: monospace;
+  outline: none;
+  resize: vertical;
+}
+
+.blog-editor-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.blog-save-message {
+  color: #607d8b;
+  font-size: 12px;
 }
 .change-srollbar::-webkit-scrollbar {/*滚动条整体样式*/
   width: 6px;     /*高宽分别对应横竖滚动条的尺寸*/

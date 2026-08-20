@@ -23,6 +23,7 @@
             <div class="tw-w-48 tw-flex-none tw-rounded-xl tw-bg-white tw-p-2">
               <div class="tw-w-full tw-h-full" v-if="selected_tag === 'Profile'">
                 <WindowSettingIcon :tag="'About Me'" :mdi="'beaker-question'" :selected_tag="selected_tag_2"  @click.native="selected_tag_2 = 'About Me'"/>
+                <WindowSettingIcon :tag="'Password'" :mdi="'lock'" :selected_tag="selected_tag_2"  @click.native="selected_tag_2 = 'Password'"/>
                 <!-- <WindowSettingIcon :tag="'Github Stats'" :mdi="'card-account-details-star'" :selected_tag="selected_tag_2"  @click.native="selected_tag_2 = 'Github Stats'"/> -->
                 <WindowSettingIcon :tag="'CodeWars'" :mdi="'pistol'" :selected_tag="selected_tag_2"  @click.native="selected_tag_2 = 'CodeWars'"/>
               </div>
@@ -76,6 +77,14 @@
                   <div class="tw-mt-3 tw-text-gray-400">LoopRainOS</div>
                   <div class="tw-text-xl tw-mt-2 tw-tracking-wide"> LoopRainOS is a free and open-source operating system,</div>
                   <div class="tw-text-lg tw-mt-2 tw-tracking-wide"> Designed for running web applications and browsing the World Wide Web. Buzhidao xieshenmele suibian xie yidian pinyin. </div>
+                </div>
+                <div class="password-settings" v-if="selected_tag_2 === 'Password'">
+                  <div class="wallpaper-title">Change administrator password</div>
+                  <input v-model="current_password" class="password-input" type="password" placeholder="Current password">
+                  <input v-model="new_password" class="password-input" type="password" placeholder="New password">
+                  <input v-model="confirm_password" class="password-input" type="password" placeholder="Confirm new password" @keyup.enter="save_password">
+                  <button class="setting-action" @click="save_password">Save password</button>
+                  <div v-if="password_message" class="tw-text-xs tw-text-gray-500">{{password_message}}</div>
                 </div>
                 <!-- <div ref="github_page" class="tw-w-full tw-h-full tw-items-center tw-flex tw-flex-col tw-justify-center" style="text-align:center" v-if="selected_tag_2 ==='Github Stats'">
                   <img src="https://github-readme-stats.vercel.app/api?username=GoodManWEN&show_icons=true&line_height=24" alt="" class="tw-w-140 tw-h-40">
@@ -154,6 +163,10 @@ export default {
       selected_tag_2:"About Me",
       username_draft:'',
       username_message:'',
+      current_password:'',
+      new_password:'',
+      confirm_password:'',
+      password_message:'',
     }
   },
   props:{
@@ -211,6 +224,25 @@ export default {
       this.$store.commit('set_admin_username', username)
       this.username_draft = username
       this.username_message = 'Administrator name updated.'
+    },
+    save_password(){
+      if (this.current_password !== this.$store.state.admin_password) {
+        this.password_message = 'Current password is incorrect.'
+        return
+      }
+      if (this.new_password.length < 4) {
+        this.password_message = 'New password must be at least 4 characters.'
+        return
+      }
+      if (this.new_password !== this.confirm_password) {
+        this.password_message = 'New passwords do not match.'
+        return
+      }
+      this.$store.commit('set_admin_password', this.new_password)
+      this.current_password = ''
+      this.new_password = ''
+      this.confirm_password = ''
+      this.password_message = 'Password updated.'
     },
     choose_avatar(){
       this.$refs.avatar_input.click()
@@ -421,6 +453,25 @@ export default {
 .username-editor {
   width: 280px;
   margin-top: 20px;
+}
+
+.password-settings {
+  width: 320px;
+  padding: 28px;
+}
+
+.password-settings .password-input {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  padding: 8px 10px;
+  border: 1px solid #dfe5e8;
+  border-radius: 6px;
+  outline: none;
+}
+
+.password-settings .setting-action {
+  margin-top: 14px;
 }
 
 .username-row {

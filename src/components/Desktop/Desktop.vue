@@ -3,7 +3,7 @@
     <div class="tw-w-full tw-h-full tw-relative"  >
       <div ref="background" class="tw-relative tw-pb-9/16 tw-h-full tw-select-none">
         <div v-if="wallpaperMode === 'solid'" class="wallpaper-solid tw-absolute" :style="{backgroundColor: wallpaperColor}"></div>
-        <img v-else :src="currentWallpaper" alt="" class="wallpaper-image tw-absolute" @load="bgloaded"/>
+        <img v-else :src="currentWallpaper" alt="" class="wallpaper-image tw-absolute" @load="bgloaded" @error="wallpaperLoadFailed"/>
         <img v-if="wallpaperMode === 'slideshow' && nextWallpaper" :src="nextWallpaper" alt="" class="wallpaper-image wallpaper-fade tw-absolute" :class="{'wallpaper-fade-visible': wallpaperFadeVisible}" @load="wallpaperLoaded" @error="wallpaperLoadFailed"/>
       </div>
     </div>
@@ -85,11 +85,13 @@ export default {
       wallpaperFadeVisible: false,
       wallpaperTimer: null,
       wallpaperTransitionTimer: null,
+      interludeTimer: null,
     }
   },
   created(){
     this.$axios.raw('map.json')
     .then((res) => {
+      this.restore_local_files(res.data)
       this.map_add_uuid(res.data)
       this.map = res.data
       this.$store.commit('commit_filemap', res.data)
@@ -101,10 +103,14 @@ export default {
   },
   mounted(){
     this.syncWallpaperMode()
+    this.interludeTimer = window.setTimeout(() => {
+      this.$store.commit('hide_interlude')
+    }, 2500)
   },
   beforeDestroy(){
     window.clearInterval(this.wallpaperTimer)
     window.clearTimeout(this.wallpaperTransitionTimer)
+    window.clearTimeout(this.interludeTimer)
   },
   watch:{
     wallpaperMode(mode) {
@@ -145,6 +151,22 @@ export default {
     },
   },
   methods:{
+    restore_local_files(map){
+      let names = JSON.parse(localStorage.getItem('looprainos-file-names') || '{}')
+      let apply_names = (items) => {
+        for (let item of items) {
+          if (item.path && names[item.path]) {
+            item.name = names[item.path]
+          }
+          if (item.children) {
+            apply_names(item.children)
+          }
+        }
+      }
+      let custom_files = JSON.parse(localStorage.getItem('looprainos-custom-files') || '[]')
+      map.push(...custom_files)
+      apply_names(map)
+    },
     syncWallpaperMode(mode = this.wallpaperMode){
       window.clearInterval(this.wallpaperTimer)
       this.wallpaperTimer = null
@@ -173,6 +195,7 @@ export default {
     wallpaperLoadFailed(){
       this.nextWallpaper = ''
       this.wallpaperFadeVisible = false
+      this.$store.commit('hide_interlude')
     },
     background_clicked(){
       this.$store.commit('close_side_bar')

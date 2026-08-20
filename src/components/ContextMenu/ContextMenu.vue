@@ -1,7 +1,7 @@
 <template>
   <div class="tw-w-44 tw-h-72  tw-absolute tw-rounded-xl tw-overflow-hidden tw-border tw-border-gray-400 tw-select-none" style="z-index:9999;backdrop-filter: blur(35px);box-shadow: 0 0 10px rgba(16,16,16,.3)" @click="fullclicked($event)" :style="{'left':context_menu_x+'px', 'top':context_menu_y +'px'}">
     <div class="tw-absolute tw-w-full tw-h-full tw-py-2 tw-flex tw-flex-col" style="background-color:rgba(235,235,235,.7)">
-      <ContextMenuButton disabled further_menu :text="'New'"/>
+      <ContextMenuButton v-if="isAdmin" :text="'New blog'" @click.native="new_blog"/>
       <ContextMenuButton disabled further_menu :text="'View'"/>
       <ContextMenuButton disabled further_menu :text="'Sort by'"/>
       <ContextMenuButton :text="'Reload LoopRainOS'" @click.native="reload_clicked"/>
@@ -81,6 +81,15 @@ export default {
         this.$store.commit('open_new_window', {'type':'terminal'})
       }
       this.$store.commit('refresh_window_focus', {'type':'terminal'})
+      this.$store.commit('hide_context_menu')
+    },
+    new_blog(){
+      let id = this.$utils.get_uuid()
+      let path = 'local:' + id
+      let name = 'new-blog.md'
+      this.$store.commit('create_file', {path:path, name:name})
+      localStorage.setItem(path, '# New blog\n\nWrite your blog here.')
+      this.$store.commit('open_new_window', {type:'text', filesrc:path, filename:name, size:0})
       this.$store.commit('hide_context_menu')
     },
     open_project(){
