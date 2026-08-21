@@ -4,10 +4,23 @@ import store from '../store'
 import LoginPage from '../components/LoginPage/LoginPage'
 import Desktop from '../components/Desktop/Desktop'
 import Down from '../components/Down'
+import Blog from '../components/Blog'
 
 Vue.use(VueRouter)
 
 const routes = [
+  {
+    path: '/blog/post/:postfilename',
+    name: "BlogPost",
+    component: Blog,
+    meta: { title: "LoopRain 博客" }
+  },
+  {
+    path: '/blog',
+    name: "Blog",
+    component: Blog,
+    meta: { title: "LoopRain 博客" }
+  },
   {
     path: '/terminated',
     name: "Down",
@@ -44,7 +57,7 @@ const routes = [
   },
   {
     path:"*",
-    redirect:'/login',
+    redirect:'/blog',
   },
 ]
 

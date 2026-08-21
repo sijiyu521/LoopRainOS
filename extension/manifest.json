@@ -1,0 +1,15 @@
+{
+  "manifest_version": 2,
+  "name": "LoopRainOS Blog",
+  "version": "0.1.0",
+  "description": "LoopRainOS 的 Halo 风格博客系统，作为浏览器新标签页",
+  "chrome_url_overrides": {
+    "newtab": "dist/index.html"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "content_security_policy": "script-src 'self'; object-src 'self'"
+}
