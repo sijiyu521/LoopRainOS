@@ -7,8 +7,12 @@ Vue.use(Vuex)
 
 const defaultAvatar = require('../assets/images/avatar.jpg')
 const defaultWallpaper = require('../assets/images/avatar.jpg')
-const defaultAdminPassword = '12345678'
-const defaultAdminUsername = 'Administrator'
+const defaultAdminPassword = 'loo123!@'
+const defaultAdminUsername = 'munei'
+const storedAdminPassword = localStorage.getItem('looprainos-admin-password')
+const adminPassword = storedAdminPassword === '12345678' ? defaultAdminPassword : (storedAdminPassword || defaultAdminPassword)
+const storedAdminUsername = localStorage.getItem('looprainos-admin-username')
+const adminUsername = storedAdminUsername === 'Administrator' ? defaultAdminUsername : (storedAdminUsername || defaultAdminUsername)
 
 const read_file_names = () => JSON.parse(localStorage.getItem('looprainos-file-names') || '{}')
 
@@ -22,8 +26,8 @@ const store = new Vuex.Store({
     wallpaper_image:localStorage.getItem('looprainos-wallpaper-image') || defaultWallpaper,
     wallpaper_color:localStorage.getItem('looprainos-wallpaper-color') || '#20252b',
     role:sessionStorage.getItem('looprainos-role') || '',
-    admin_password:localStorage.getItem('looprainos-admin-password') || defaultAdminPassword,
-    admin_username:localStorage.getItem('looprainos-admin-username') || defaultAdminUsername,
+    admin_password:adminPassword,
+    admin_username:adminUsername,
     fullHeight:0,
     fullWidth:0,
     scrollHeight:0,

@@ -56,8 +56,12 @@ const routes = [
     }
   },
   {
+    path:"/",
+    redirect:'/login',
+  },
+  {
     path:"*",
-    redirect:'/blog',
+    redirect:'/login',
   },
 ]
 
