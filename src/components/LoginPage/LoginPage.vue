@@ -48,7 +48,7 @@
           <img src="../../assets/images/deepin_text_1.png" alt="" class="tw-w-32">
           <div class="flex-none tw-flex tw-flex-col-reverse tw-pl-3">
             <div class="tw-h-3"></div>
-            <div class="tw-absolute tw-text-gray-300">Made By Bilibili</div></div>
+            <div class="tw-absolute tw-text-gray-300">Made By Munei</div></div>
         </div>
         <div class="tw-h-full tw-flex-grow"></div>
         <div class="tw-h-full flex-none tw-w-76 tw-flex tw-justify-center tw-items-center tw-pr-2" style="min-width:300px">
