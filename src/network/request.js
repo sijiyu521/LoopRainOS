@@ -33,6 +33,24 @@ let request = {
     instance.interceptors.request.use(rcall , rerr)
     return instance(config)
   },
+  put: (config) => {
+    const instance = axios.create({
+      baseURL: baseURL,
+      timeout: 10000,
+      method: 'put',
+    })
+    instance.interceptors.request.use(rcall , rerr)
+    return instance(config)
+  },
+  delete: (config) => {
+    const instance = axios.create({
+      baseURL: baseURL,
+      timeout: 10000,
+      method: 'delete',
+    })
+    instance.interceptors.request.use(rcall , rerr)
+    return instance(config)
+  },
   raw: (config) => {
     const instance = axios.create({
       timeout: 10000

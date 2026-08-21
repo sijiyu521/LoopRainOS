@@ -52,6 +52,7 @@ import KeyBoard from '../Keyboard/KeyBoard.vue'
 import KeyBoardMoveIcon from '../Keyboard/KeyBoardMoveIcon.vue'
 import ContextMenu from '../ContextMenu/ContextMenu.vue'
 import ContextMenuBottomBar from '../ContextMenu/ContextMenuBottomBar.vue'
+import api from '../../network/api'
 
 const wallpaperApiUrl = 'https://www.loliapi.com/acg/'
 
@@ -174,6 +175,29 @@ export default {
       let custom_files = JSON.parse(localStorage.getItem('looprainos-custom-files') || '[]')
       map.push(...custom_files)
       apply_names(map)
+      // Merge custom files from backend (dedupe by path)
+      api.getFiles()
+      .then((res) => {
+        if (res.data && res.data.success) {
+          let backendFiles = res.data.files || []
+          let backendNames = res.data.names || {}
+          let existingPaths = new Set(this.map.map(f => f.path))
+          for (let f of backendFiles) {
+            if (!existingPaths.has(f.path)) {
+              this.map.push(f)
+              existingPaths.add(f.path)
+            }
+          }
+          // Apply backend names
+          for (let item of this.map) {
+            if (item.path && backendNames[item.path]) {
+              item.name = backendNames[item.path]
+            }
+          }
+          this.$store.commit('commit_filemap', this.map)
+        }
+      })
+      .catch(() => {})
     },
     syncWallpaperMode(mode = this.wallpaperMode){
       window.clearInterval(this.wallpaperTimer)

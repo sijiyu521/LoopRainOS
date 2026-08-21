@@ -7,6 +7,8 @@
 
 <script>
 import Interlude from './components/Interlude.vue';
+import { migrateToBackend } from './network/sync';
+
 export default {
   name: 'App',
   components: {
@@ -28,6 +30,8 @@ export default {
     window.onscroll = () => {
       this.$store.commit('refresh_scroll')
     }
+    // Migrate localStorage to backend
+    migrateToBackend()
   },
   mounted(){
   },

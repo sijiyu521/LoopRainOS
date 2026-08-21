@@ -72,6 +72,7 @@
 <script>
 import KeyBoard from '../Keyboard/KeyBoard.vue';
 import RestartButton from './RestartButton.vue';
+import api from '../../network/api';
 
 const weekdays = new Array('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday');
 
@@ -145,21 +146,34 @@ export default {
         this.enter_system()
         return
       }
-      // pw check
-      if (this.password === this.password_answer) {
-        this.enter_system()
-        return
-      } else {
-        // wrong password
-        this.show_loading_bar = true
-        window.setTimeout(()=>{
-          this.show_loading_bar = false
-          this.button_shaking = true
-        },3000)
-        window.setTimeout(()=>{
-          this.button_shaking = false
-        },3800)
-      }
+      // Try backend auth first, fallback to local
+      api.login(this.$store.state.admin_username, this.password, 'admin')
+      .then((res) => {
+        if (res.data && res.data.success) {
+          this.enter_system()
+        } else {
+          this.wrong_password()
+        }
+      })
+      .catch(() => {
+        // Backend unavailable, fallback to local password check
+        if (this.password === this.password_answer) {
+          this.enter_system()
+        } else {
+          this.wrong_password()
+        }
+      })
+    },
+    wrong_password(){
+      // wrong password
+      this.show_loading_bar = true
+      window.setTimeout(()=>{
+        this.show_loading_bar = false
+        this.button_shaking = true
+      },3000)
+      window.setTimeout(()=>{
+        this.button_shaking = false
+      },3800)
     },
     select_login_mode(mode){
       this.login_mode = mode

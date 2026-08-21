@@ -37,6 +37,7 @@
 
 <script>
 import Window from '../WindowBasic/Window.vue'
+import { saveFileContentToBackend, loadFileContentFromBackend } from '../../network/sync'
 
 export default {
   name: 'WindowVSCode',
@@ -133,9 +134,15 @@ export default {
     },
   },
   methods:{
-    loadFile(){
+    async loadFile(){
       if (this.filesrc.indexOf('local:') === 0) {
-        this.fileContent = localStorage.getItem(this.filesrc) || ''
+        // Try backend first, fallback to localStorage
+        const backendContent = await loadFileContentFromBackend(this.filesrc)
+        if (backendContent !== null) {
+          this.fileContent = backendContent
+        } else {
+          this.fileContent = localStorage.getItem(this.filesrc) || ''
+        }
         this.saveMessage = ''
         return
       }
@@ -154,9 +161,11 @@ export default {
     go_focus(){
       this.$store.commit('refresh_window_focus', {'type':'vscode'})
     },
-    saveFile(){
+    async saveFile(){
       if (!this.isEditable || !this.filesrc) return
+      // Save to both localStorage (fallback) and backend
       localStorage.setItem(this.filesrc, this.fileContent)
+      await saveFileContentToBackend(this.filesrc, this.fileContent)
       this.saveMessage = 'Saved'
       window.setTimeout(() => { this.saveMessage = '' }, 2000)
     },

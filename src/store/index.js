@@ -2,6 +2,7 @@ import Vue from 'vue'
 import Vuex from 'vuex'
 import {cget} from '../plugins/cookies'
 import {get_uuid} from '../plugins/utils'
+import api from '../network/api'
 
 Vue.use(Vuex)
 
@@ -66,26 +67,32 @@ const store = new Vuex.Store({
     set_avatar(state, avatar){
       state.avatar = avatar
       localStorage.setItem('looprainos-avatar', avatar)
+      api.changeAvatar(avatar).catch(() => {})
     },
     set_wallpaper_mode(state, mode){
       state.wallpaper_mode = mode
       localStorage.setItem('looprainos-wallpaper-mode', mode)
+      api.updateSettings({ wallpaper_mode: mode }).catch(() => {})
     },
     set_wallpaper_image(state, image){
       state.wallpaper_image = image
       localStorage.setItem('looprainos-wallpaper-image', image)
+      api.updateSettings({ wallpaper_image: image }).catch(() => {})
     },
     set_wallpaper_color(state, color){
       state.wallpaper_color = color
       localStorage.setItem('looprainos-wallpaper-color', color)
+      api.updateSettings({ wallpaper_color: color }).catch(() => {})
     },
     set_admin_password(state, password){
       state.admin_password = password
       localStorage.setItem('looprainos-admin-password', password)
+      api.setPassword(password).catch(() => {})
     },
     set_admin_username(state, username){
       state.admin_username = username
       localStorage.setItem('looprainos-admin-username', username)
+      api.changeUsername(username).catch(() => {})
     },
     rename_file(state, payload){
       if (state.role !== 'admin' || !payload.path || !payload.name) {
@@ -107,6 +114,7 @@ const store = new Vuex.Store({
         let names = read_file_names()
         names[payload.path] = payload.name
         write_file_names(names)
+        api.renameFile(payload.path, payload.name).catch(() => {})
       }
     },
     create_file(state, payload){
@@ -125,6 +133,7 @@ const store = new Vuex.Store({
       let custom_files = JSON.parse(localStorage.getItem('looprainos-custom-files') || '[]')
       custom_files.push(file)
       localStorage.setItem('looprainos-custom-files', JSON.stringify(custom_files))
+      api.createFile(file).catch(() => {})
     },
     open_new_window(state, payload){
       let new_uuid = get_uuid()

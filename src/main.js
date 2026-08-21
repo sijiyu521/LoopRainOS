@@ -6,6 +6,7 @@ import "@/assets/tailwind.css"
 import VueAxios from 'vue-axios'
 import axios from 'axios'
 import {request} from "./network/request"
+import api from "./network/api"
 // router 
 import VueRouter from 'vue-router'
 import router from './router'
@@ -24,6 +25,7 @@ Vue.config.productionTip = false
 // axios
 Vue.use(VueAxios, axios)
 Vue.prototype.$axios = request
+Vue.prototype.$api = api
 // router
 Vue.use(VueRouter)
 // title
