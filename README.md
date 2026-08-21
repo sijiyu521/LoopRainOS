@@ -2,7 +2,7 @@
 
 LoopRainOS 是一个基于 Vue 的 WebOS 项目，将轻量的桌面系统体验带到浏览器中，适合制作个人主页、项目展示、简历和 Markdown 博客。
 
-#### [中英文文档](https://github.com/sijiyu521/LoopRainOS/blob/main/README%20en.md)
+#### [英文文档](https://github.com/sijiyu521/LoopRainOS/blob/main/README%20en.md)
 
 ## 主要功能
 
