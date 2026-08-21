@@ -1,118 +1,71 @@
-![](https://raw.githubusercontent.com/GoodManWEN/GoodManWEN.github.io/main/misc/figure.png)
+# LoopRainOS
 
-# About GoodManWEN.github.io
- 
-A website simulating linux system's GUI, using theme of Deepin distro. You can write blogs with markdown and use it to serve your own technical resumes.
+LoopRainOS 是一个基于 Vue 的 WebOS 项目，将轻量的桌面系统体验带到浏览器中，适合制作个人主页、项目展示、简历和 Markdown 博客。
 
-#### [中文文档](https://github.com/GoodManWEN/GoodManWEN.github.io/blob/main/misc/readme_chs.md)
+## 主要功能
 
-## Quick Start
-This project is originally designed to be host on github pages. If this is the way you expect, you follow these steps 
-```
-1. Fork this project.
-2. Goto settings page to link your website to a specified URL.
-3. Start the actions manually (According to github's default policy, actions will not be started 
-   automatically until they are confirmed manually).
-4. Update line 18 of file /.github/workflows/AutoUpdate.yml, connect it to your repo's address.
-```
-After setting up, if your configuration is correct, then the project will run as expected. All of your changes in `/blog` directory will be identically projected onto the linked website (according to your settings).
+- 仿 Deepin 风格的桌面、壁纸、侧边栏和任务栏
+- 支持移动、缩放、最大化、最小化和关闭窗口
+- 文件管理器、浏览器、终端、音乐播放器、设置和文本查看器
+- 根据 `blog/` 目录生成虚拟文件系统
+- 支持 Markdown 文章渲染和文章直达链接
+- 支持将部分设置和内容修改保存到浏览器本地存储
 
-Nevertheless, some people may want to self-host it (locally), then you should follow these steps:
-```
-git clone https://github.com/GoodManWEN/GoodManWEN.github.io.git
-cd GoodManWEN.github.io.git
+## 环境要求
+
+- Node.js 与 npm
+- Python 3，用于重新生成虚拟文件目录
+
+## 本地运行
+
+```bash
 npm install
 npm run serve
 ```
-At this point you should get the functionality same as a basic blog framework, and if you want to change the blog content to your own, you should modify **you should change the content in the /blog directory**, and then:
-```
+
+启动后访问 `http://localhost:8080`。
+
+## 修改博客与构建
+
+将 Markdown 文章和目录放入 `blog/`，然后运行生成脚本：
+
+```bash
 python3 generate.py
 npm run build
 ```
-This will convert the pages into static distribution files in `/docs` directory, you can serve them in any web framework.
 
-### What's the difference from other comparable programs?
+生成的静态网站位于 `docs/`，可使用任意静态 Web 服务器部署。
 
-I happened to write this project because I personally need a project demonstration platform recently, other than comparable programs, I believe this project should have some usefulness in addition to aesthetics. Design-wise, it implements a complete window UI and a basic nested directory functionality. So you can show some folder simulatively as your blog, which accepts markdown files will reduce the cost of migration, and you can resize and stretch the window freely for easy navigation.
+文章可以通过以下格式直接访问：
 
-### How to update blog contents?
-
-If your project is hosted by **Github Pages**, you can simply modify the contents of the blog directory and then submit a commit. Content will be update automatically by Actions, and then distributed to the website (there may be a delay in updates due to caching policies).
-
-### About blog features
-
-To make it easier for you to post your articles as hyperlinks on third-party platforms, you can use the following routing form to allow users to open your specified posts directly with a unique link:
-```
-   https://{{host}}/#/desktop/post/{{article_file_name}}.md
-
-   e.g.
-   https://GoodManWEN.github.io/#/desktop/post/README.md
+```text
+https://<域名>/#/desktop/post/<文件名>.md
 ```
 
-Notably that program will recursively look for the first matched file in the file structure, which means that if you have multiple files using the same file name (like README.md) but distributed in different folders, this will only match the first of them. 
+程序会在虚拟文件树中递归查找第一个匹配的文件名。文章的第一个 `# ` 标题会作为文章标题，标题后的第一行合适文本会作为摘要。
 
-If there is no match, then a 404 file will be returned.
+## 音乐配置
 
-Regarding the logic to generate title & abstract, the article will be titled with the first recognized `# line` and the first subsequent line without a punctuation mark will be recognized as abstract.
+编辑 `public/musics.json`，按照现有格式配置 `vue-aplayer` 音乐播放器。音乐封面可以放在 `public/musiccovers/` 中。请只配置拥有合法分发权限的音乐资源。
 
-### What if I'd like to customize the music module?
+## 技术栈
 
-This project has a simple built-in music module built using Aplayer. Considering the copyright policy, you need to set up your music play list yourself. The relevant configuration files are stored in `/public/musics.json`, you need to follow the same format when edit. Generally speaking, you need to focus on the name, the author, the link to the source and the link to the cover of the music.
+Vue 2、Vue Router、Vuex、Vuetify、Tailwind CSS、Axios、Markdown-it Vue、Vue APlayer 和 Vue CLI。
 
-By default, there's no direct music download links available, and all the album covers are configured in the `/public/musiccovers` directory.
+## 目录结构
 
-### Packages
-
-This website (source code here) uses these sources:
+```text
+blog/       映射到虚拟文件系统的 Markdown 内容
+public/     静态资源、生成数据、音乐和封面
+src/        Vue 应用、组件、路由、状态管理和插件
+docs/       构建后的静态文件
+generate.py Markdown 数据生成脚本
 ```
-@vue/cli 4.5.11, Blank template with ESLint
-vuetify default settings
-node-sass & sass-loader
-tailwindcss + postcss
-animate.css
-vuex
-vue-router
-axios & vue-axios
-vue-wechat-title
-```
-Markdown render is powered by 
-```
-markdown-it-vue
-```
-Music player is basic on
-```
-vue-aplayer
-```
-This project is inspired by:
-- [https://github.com/vivek9patel/vivek9patel.github.io](https://github.com/vivek9patel/vivek9patel.github.io)
-- [https://codepen.io/Krishna1947/pen/KKgZgLd](https://codepen.io/Krishna1947/pen/KKgZgLd)
-- [https://github.com/puruvj/macos-web](https://github.com/puruvj/macos-web)
 
-### Contributing
+## 贡献
 
-Any improvements that wish to improve this site are welcome, you need to contribute to this project by submitting a PR. Since the author himself is not a professional programmer focused on front-end, he is not familiar with the way how front-end tests are deployed, so you shoulddescribe clearly in the PR the reason for your submission, all the places you are modifying, and what we should expect to get out of it.
+欢迎提交问题修复和功能改进。提交 PR 时请说明修改原因、涉及范围和预期效果，并参考[二次开发说明](misc/Guidelines%20for%20further%20development.md)。
 
-##### [Guidelines for further development](https://github.com/GoodManWEN/GoodManWEN.github.io/blob/main/misc/Guidelines%20for%20further%20development.md)
+## 开源协议
 
-
-### Current deficiencies
-
-As mentioned above, since my daily work field is mainly not front-end programming in the past years. As the project is basicly comes from fortuity, I got not many time to finish it other than working hours. The basic coding time is about three days, So this will definitely leave a lot of defects. During the implementation that I realize there are still noticeable differences between the project and the original deepin's UI system, simply put:
-- Fonts, I didn't have time to tune the fonts, which caused them to differ significantly from the originals.
-- Icons, to get the icons quickly, they come from screenshots.
-- Except for some parts, the animations are mainly come from `animate.css`, the performance is different from the original version.
-
-Similarly, this framework does not perform well on mobile platforms. This is partly due to compatibility issues with `animate.css`, and others comes from that many designs are designed for desktop platforms, and I don't know how to arrange them on mobile screens.
-
-## About Deepin
-
-The author of this project has no official relationship with deepin, if you wish to try out the deepin system after viewing this project, please visit [https://www.deepin.org/en/](https://www.deepin.org/en/)
-
-##How to set it without github
-1.You need a VPS to create 
-
-### Spacial thanks
-
-To you, hope you enjoy this website.
-
-[![Stargazers repo roster for @GoodManWEN/GoodManWEN.github.io](https://reporoster.com/stars/GoodManWEN/GoodManWEN.github.io)](https://github.com/GoodManWEN/GoodManWEN.github.io/stargazers)
+本项目基于 AGPLv3 协议开源，与 Deepin 官方没有任何关系。
