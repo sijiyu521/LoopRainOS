@@ -11,10 +11,9 @@
       
       <WindowMusic v-if="false"/>
       <div v-for="item in window_list" :key="item.uuid"> 
-        <WindowFolder v-if="item.type==='explorer'" :uuid='item.uuid' :startpos_x="item.spx" :startpos_y="item.spy" :filemap="map" :openpath="item.openpath" :zindex="item.zindex" :minimized="item.minimized"/>
-        <WindowText v-if="item.type==='text'" :uuid='item.uuid' :startpos_x="item.spx" :startpos_y="item.spy" :filesrc="item.filesrc" :filename="item.filename" :size="item.size" :zindex="item.zindex" :minimized="item.minimized"/>
-        <WindowBrowser v-if="item.type==='browser'" :uuid='item.uuid' :startpos_x="item.spx" :startpos_y="item.spy" :zindex="item.zindex" :default_width="item.default_width" :minimized="item.minimized"/>
-        <WindowVSCode v-if="item.type==='vscode'" :uuid='item.uuid' :startpos_x="item.spx" :startpos_y="item.spy" :zindex="item.zindex" :minimized="item.minimized"/>
+        <WindowFolder v-if="item.type==='explorer'" :uuid='item.uuid' :startpos_x="item.spx" :startpos_y="item.spy" :filemap="desktopMap" :openpath="item.openpath" :zindex="item.zindex" :minimized="item.minimized"/>
+        <WindowBrowser v-if="item.type==='browser'" :uuid='item.uuid' :startpos_x="item.spx" :startpos_y="item.spy" :zindex="item.zindex" :default_width="item.default_width" :minimized="item.minimized" :initial_src="item.initial_src" :initial_title="item.initial_title"/>
+        <WindowVSCode v-if="item.type==='vscode'" :uuid='item.uuid' :startpos_x="item.spx" :startpos_y="item.spy" :zindex="item.zindex" :filesrc="item.filesrc" :filename="item.filename" :size="item.size" :minimized="item.minimized"/>
         <WindowMusic v-if="item.type==='music'" :uuid='item.uuid' :startpos_x="item.spx" :startpos_y="item.spy" :zindex="item.zindex" :default_width="item.default_width" :default_height="item.default_height" :fixedsize="item.fixedsize" :minimized="item.minimized"/>
         <WindowSetting v-if="item.type==='settings'" :uuid='item.uuid' :startpos_x="item.spx" :startpos_y="item.spy" :zindex="item.zindex" :minimized="item.minimized"/>
         <WindowTerminal v-if="item.type==='terminal'" :uuid='item.uuid' :startpos_x="item.spx" :startpos_y="item.spy" :zindex="item.zindex" :minimized="item.minimized"/>
@@ -31,7 +30,7 @@
         <ContextMenuBottomBar v-if="context_menu_show&&($store.state.current_focus==='ContextMenuBottomBar')" :mode="$store.state.context_menu_bottom_bar_display_mode" :target="$store.state.context_menu_bottom_bar_show_target"/>
       </div>
       <div class="tw-absolute tw-w-1" style="height: calc(100% - 20px)">
-        <DesktopFileArray :filemap="map"/>
+        <DesktopFileArray :filemap="desktopMap"/>
       </div>
       <BottomBar v-if="true"/>
       <SideBar/>
@@ -46,10 +45,9 @@ import SideBar from './SideBar.vue'
 import WindowFolder from '../WindowChildren/WindowFolder.vue'
 import WindowMusic from '../WindowChildren/WindowMusic.vue'
 import WindowVSCode from '../WindowChildren/WindowVSCode.vue'
-import WindowText from '../WindowChildren/WindowText.vue'
-import WindowTerminal from '../WindowChildren/WindowTerminal.vue'
 import WindowBrowser from '../WindowChildren/WindowBrowser.vue'
 import WindowSetting from '../WindowChildren/WindowSetting.vue'
+import WindowTerminal from '../WindowChildren/WindowTerminal.vue'
 import KeyBoard from '../Keyboard/KeyBoard.vue'
 import KeyBoardMoveIcon from '../Keyboard/KeyBoardMoveIcon.vue'
 import ContextMenu from '../ContextMenu/ContextMenu.vue'
@@ -64,16 +62,15 @@ export default {
   components: {
     BottomBar,
     SideBar,
-    WindowText,
     WindowMusic,
     DesktopFileArray,
     WindowFolder,
     WindowVSCode,
     WindowBrowser,
     WindowSetting,
+    WindowTerminal,
     KeyBoard,
     KeyBoardMoveIcon,
-    WindowTerminal,
     ContextMenu,
     ContextMenuBottomBar
   },
@@ -131,6 +128,9 @@ export default {
     }
   },
   computed:{
+    desktopMap(){
+      return this.filterLocalFiles(this.map)
+    },
     wallpaperMode(){
       return this.$store.state.wallpaper_mode
     },
@@ -151,6 +151,14 @@ export default {
     },
   },
   methods:{
+    filterLocalFiles(items){
+      return items.reduce((result, item) => {
+        if (item.path && item.path.indexOf('local:') === 0) {
+          result.push(item)
+        }
+        return result
+      }, [])
+    },
     restore_local_files(map){
       let names = JSON.parse(localStorage.getItem('looprainos-file-names') || '{}')
       let apply_names = (items) => {
@@ -277,14 +285,14 @@ export default {
       let res = digin(this.map)
       if (res != null) {
         this.$store.commit('open_new_window', {
-          type:'text',
+          type:'vscode',
           filesrc: res.path,
           filename: res.name,
           size: res.size,
         })
       } else {
         this.$store.commit('open_new_window', {
-          type:'text',
+          type:'vscode',
           filesrc: '',
           filename: '404 not found',
           size: 0,

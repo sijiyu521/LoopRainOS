@@ -267,7 +267,7 @@ export default {
           if (item.name === remain) {
             if (item.children === undefined) {
               this.$store.commit('open_new_window', {
-                type:'text',
+                type:'vscode',
                 filesrc: item.path,
                 filename: item.name,
                 size: item.size,

@@ -102,7 +102,7 @@ export default {
     },
     view_triggered(){
       this.$store.commit('open_new_window', {
-        type:'text',
+        type:'vscode',
         filesrc: this.filesrc,
         filename: this.filename,
         size: this.filesize,

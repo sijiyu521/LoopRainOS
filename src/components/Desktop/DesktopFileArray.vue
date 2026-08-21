@@ -67,7 +67,7 @@ export default {
           for (let loop_item of this.filemap) {
             if (loop_item.name === item_name) {
               this.$store.commit('open_new_window', {
-                type:'text',
+                type:'vscode',
                 filesrc: loop_item.path,
                 filename: loop_item.name,
                 size: loop_item.size,

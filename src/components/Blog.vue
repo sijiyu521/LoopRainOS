@@ -85,13 +85,30 @@
           <h1>{{ article.title || article.name }}</h1>
           <p class="article-lead">{{ article.abstract }}</p>
           <div v-if="articleContent" class="markdown-body"><markdown-it-vue :content="articleContent" :options="{markdownIt: {html: true}}" /></div>
-          <div v-else class="article-loading">正在打开这篇文章...</div>
-        </div>
+          <div v-else class="article-loading">正在打开这篇文章...</div>          <div v-if="articleContent" class="article-foot">
+            <div class="article-stats">
+              <span>约 {{ wordCount }} 字</span><span>阅读约 {{ readTime }} 分钟</span>
+            </div>
+            <nav class="article-nav">
+              <router-link v-if="prevArticle" :to="{name: 'BlogPost', params: {postfilename: prevArticle.name}}" class="nav-card">
+                <small>← 上一篇</small>
+                <span>{{ prevArticle.title || prevArticle.name }}</span>
+              </router-link>
+              <span v-else></span>
+              <router-link v-if="nextArticle" :to="{name: 'BlogPost', params: {postfilename: nextArticle.name}}" class="nav-card nav-card-right">
+                <small>下一篇 →</small>
+                <span>{{ nextArticle.title || nextArticle.name }}</span>
+              </router-link>
+              <span v-else></span>
+            </nav>
+          </div>        </div>
         <div v-else class="empty-state article-missing">文章不存在，或它还没有被生成。</div>
       </article>
     </main>
 
     <footer class="blog-footer"><span>© {{ new Date().getFullYear() }} LoopRainOS</span><span>Built with curiosity & Markdown</span></footer>
+
+    <button v-if="showTopButton" class="back-to-top" @click="scrollTop" title="返回顶部">↑</button>
   </div>
 </template>
 
@@ -103,11 +120,28 @@ export default {
   name: 'Blog',
   components: { MarkdownItVue },
   data () {
-    return { articles: [], searchText: '', selectedCategory: '全部', articleContent: '' }
+    return { articles: [], searchText: '', selectedCategory: '全部', articleContent: '', showTopButton: false, interludeTimer: null }
   },
   computed: {
     isArticle () { return Boolean(this.$route.params.postfilename) },
     categories () { return ['全部'].concat(Array.from(new Set(this.articles.map(article => article.category)))) },
+    article () { return this.articles.find(item => item.name === this.$route.params.postfilename) || null },
+    prevArticle () {
+      const index = this.articles.findIndex(item => item.name === this.$route.params.postfilename)
+      return index > 0 ? this.articles[index - 1] : null
+    },
+    nextArticle () {
+      const index = this.articles.findIndex(item => item.name === this.$route.params.postfilename)
+      return index > -1 && index < this.articles.length - 1 ? this.articles[index + 1] : null
+    },
+    wordCount () {
+      if (!this.articleContent) return 0
+      // 移除代码块后计算纯文本字数(含中文字符,每字符算1个字数)
+      const noCode = this.articleContent.replace(/```[\s\S]*?```/g, ' ')
+      const plain = noCode.split('').filter(ch => ch.trim() && !'>#*`[]()!~|_-'.includes(ch)).join('')
+      return plain.length || Math.round(this.articleContent.length / 2.5)
+    },
+    readTime () { return Math.max(1, Math.round(this.wordCount / 400)) },
     filteredArticles () {
       const query = this.searchText.trim().toLowerCase()
       return this.articles.filter(article => {
@@ -118,11 +152,34 @@ export default {
     },
     years () { return Array.from(new Set(this.articles.map(article => new Date(article.lastedittime * 1000).getFullYear()))).sort((a, b) => b - a) }
   },
-  created () { this.loadArticles() },
+  created () {
+    this.loadArticles()
+    window.addEventListener('scroll', this.onScroll)
+    // 延迟关闭加载动画（Interlude）
+    this.interludeTimer = window.setTimeout(() => {
+      this.$store.commit('hide_interlude')
+    }, 800)
+  },
+  beforeDestroy () {
+    window.removeEventListener('scroll', this.onScroll)
+    if (this.interludeTimer) {
+      window.clearTimeout(this.interludeTimer)
+    }
+  },
   watch: {
-    '$route.params.postfilename' () { this.loadArticleContent() }
+    '$route.params.postfilename' () {
+      this.$store.commit('hide_interlude')
+      this.loadArticleContent()
+      window.scrollTo(0, 0)
+    },
+    '$route' () {
+      // 路由变化时（如从其他页面回到博客），确保关闭加载动画
+      this.$store.commit('hide_interlude')
+    }
   },
   methods: {
+    onScroll () { this.showTopButton = (window.pageYOffset || document.documentElement.scrollTop) > 400 },
+    scrollTop () { window.scrollTo({ top: 0, behavior: 'smooth' }) },
     flatten (items, category) {
       return items.reduce((result, item) => {
         if (item.children) return result.concat(this.flatten(item.children, item.name))
@@ -138,9 +195,8 @@ export default {
     },
     loadArticleContent () {
       this.articleContent = ''
-      const article = this.articles.find(item => item.name === this.$route.params.postfilename)
-      if (!article) return
-      this.$axios.raw(article.path).then(response => { this.articleContent = response.data.data || '' }).catch(() => {})
+      if (!this.article || !this.article.path) return
+      this.$axios.raw(this.article.path).then(response => { this.articleContent = response.data.data || '' }).catch(() => {})
     },
     formatDate (timestamp) {
       if (!timestamp) return '未标注日期'
@@ -164,6 +220,8 @@ export default {
 .blog-main { padding: 88px 0 40px; }.blog-intro { display: grid; grid-template-columns: 1.4fr .6fr; gap: 80px; align-items: end; min-height: 380px; }.eyebrow { color: var(--accent); font: 11px 'DM Mono', monospace; letter-spacing: .11em; margin: 0 0 15px; }.blog-intro h1 { font-size: clamp(42px, 6vw, 72px); line-height: 1.06; letter-spacing: -3px; margin: 0; font-weight: 700; }.blog-intro h1 em { color: #537c65; font-style: normal; }.intro-copy { max-width: 470px; color: var(--muted); line-height: 1.8; margin: 25px 0; font-size: 15px; }.intro-actions { display: flex; gap: 22px; align-items: center; }.primary-button { background: var(--ink); color: white; padding: 14px 20px; text-decoration: none; font-size: 13px; border-radius: 3px; }.primary-button span { color: #f5cf65; margin-left: 12px; }.article-count { color: var(--muted); font: 11px 'DM Mono', monospace; }.intro-note { background: var(--mint); padding: 33px 30px 28px; transform: rotate(3deg); position: relative; box-shadow: 8px 9px 0 #b7d2bc; }.intro-note p { font-size: 21px; line-height: 1.45; margin: 0 0 20px; letter-spacing: -1px; }.intro-note small { font: 10px 'DM Mono', monospace; color: #5e7a65; }.note-pin { position: absolute; width: 10px; height: 10px; background: var(--accent); border-radius: 50%; top: 14px; left: 50%; }
 .posts-section { padding-top: 130px; }.section-heading { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid var(--line); padding-bottom: 20px; }.section-heading h2, .archive-section h2, .about-section h2 { font-size: 30px; letter-spacing: -1.4px; margin: 0; }.search-box { border-bottom: 1px solid #aebbb1; padding: 6px 0; display: flex; gap: 8px; color: var(--muted); }.search-box input { border: 0; outline: 0; background: transparent; width: 150px; font: 12px Manrope, sans-serif; }.category-tabs { display: flex; gap: 8px; margin: 22px 0; }.category-tabs button, .archive-years button { border: 0; background: transparent; cursor: pointer; color: var(--muted); padding: 7px 12px; font: 12px Manrope, sans-serif; }.category-tabs button.active, .category-tabs button:hover { background: var(--ink); color: white; border-radius: 2px; }.post-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }.post-card { min-height: 270px; background: white; border: 1px solid var(--line); padding: 26px; display: flex; flex-direction: column; transition: transform .2s, box-shadow .2s; }.post-card:hover { transform: translateY(-5px); box-shadow: 7px 7px 0 var(--mint); }.post-card-featured { grid-column: span 2; background: #e9f2e5; }.post-card-top, .article-meta { display: flex; justify-content: space-between; color: var(--accent); font: 10px 'DM Mono', monospace; letter-spacing: .04em; }.post-card-top time, .article-meta time { color: var(--muted); }.post-card h3 { font-size: 22px; line-height: 1.3; letter-spacing: -.8px; margin: 35px 0 12px; }.post-card p { color: var(--muted); font-size: 13px; line-height: 1.75; margin: 0; }.read-link { color: var(--ink); margin-top: auto; padding-top: 28px; font-size: 12px; text-decoration: none; font-weight: 700; }.read-link span { color: var(--accent); margin-left: 6px; }.empty-state { padding: 55px 0; color: var(--muted); font-size: 14px; }
 .archive-section { border-top: 1px solid var(--line); margin-top: 120px; padding: 40px 0; display: flex; justify-content: space-between; }.archive-years { display: flex; gap: 25px; }.archive-years button { font: 18px 'DM Mono', monospace; color: var(--ink); }.archive-years span { color: var(--accent); font-size: 11px; margin-left: 5px; }.about-section { border-top: 1px solid var(--line); padding: 50px 0 75px; display: flex; gap: 28px; align-items: center; max-width: 700px; }.about-avatar { width: 72px; height: 72px; flex: none; border-radius: 50%; display: grid; place-items: center; background: #f5cf65; font-weight: 800; font-size: 22px; }.about-section h2 { font-size: 24px; margin-bottom: 9px; }.about-section p:not(.eyebrow) { color: var(--muted); line-height: 1.7; font-size: 13px; margin: 0; }
-.article-page { max-width: 760px; margin: 0 auto; padding: 10px 0 100px; }.back-link { color: var(--muted); text-decoration: none; font: 12px 'DM Mono', monospace; }.article-wrap { margin-top: 80px; }.article-meta { margin-bottom: 20px; }.article-wrap h1 { font-size: clamp(38px, 6vw, 62px); line-height: 1.1; letter-spacing: -2.5px; margin: 0; }.article-lead { color: var(--muted); font-size: 17px; line-height: 1.7; margin: 25px 0 55px; }.markdown-body { border-top: 1px solid var(--line); padding-top: 40px; font-size: 15px; line-height: 1.9; }.markdown-body >>> h2, .markdown-body >>> h3 { letter-spacing: -1px; margin-top: 2em; }.markdown-body >>> a { color: var(--accent); }.markdown-body >>> code { background: #e9eee8; padding: 3px 5px; }.markdown-body >>> pre { background: var(--ink); color: #e8f0e7; padding: 20px; overflow: auto; }.article-loading { color: var(--muted); }.blog-footer { border-top: 1px solid var(--line); padding: 22px 0 30px; display: flex; justify-content: space-between; color: var(--muted); font: 10px 'DM Mono', monospace; }
+.article-page { max-width: 760px; margin: 0 auto; padding: 10px 0 100px; }.back-link { color: var(--muted); text-decoration: none; font: 12px 'DM Mono', monospace; }.article-wrap { margin-top: 80px; }.article-meta { margin-bottom: 20px; }.article-wrap h1 { font-size: clamp(38px, 6vw, 62px); line-height: 1.1; letter-spacing: -2.5px; margin: 0; }.article-lead { color: var(--muted); font-size: 17px; line-height: 1.7; margin: 25px 0 55px; }.markdown-body { border-top: 1px solid var(--line); padding-top: 40px; font-size: 15px; line-height: 1.9; }.markdown-body >>> h2, .markdown-body >>> h3 { letter-spacing: -1px; margin-top: 2em; }.markdown-body >>> a { color: var(--accent); }.markdown-body >>> code { background: #e9eee8; padding: 3px 5px; }.markdown-body >>> pre { background: var(--ink); color: #e8f0e7; padding: 20px; overflow: auto; }.article-loading { color: var(--muted); }.back-to-top { position: fixed; right: 28px; bottom: 28px; width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--ink); color: #f5cf65; font-size: 20px; cursor: pointer; box-shadow: 0 6px 18px rgba(23,33,28,.22); transition: transform .2s, opacity .2s; }.back-to-top:hover { transform: translateY(-3px); }
+.article-foot { margin-top: 60px; border-top: 1px solid var(--line); padding-top: 26px; }.article-stats { display: flex; gap: 20px; color: var(--muted); font: 11px 'DM Mono', monospace; }.article-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 22px; }.nav-card { border: 1px solid var(--line); background: white; padding: 16px 18px; text-decoration: none; color: var(--ink); transition: border-color .2s, box-shadow .2s; }.nav-card:hover { box-shadow: 5px 5px 0 var(--mint); }.nav-card small { display: block; color: var(--accent); font: 10px 'DM Mono', monospace; margin-bottom: 7px; }.nav-card span { font-size: 13px; font-weight: 700; line-height: 1.4; }.nav-card-right { text-align: right; }
+.blog-footer { border-top: 1px solid var(--line); padding: 22px 0 30px; display: flex; justify-content: space-between; color: var(--muted); font: 10px 'DM Mono', monospace; }
 @media (max-width: 720px) { .blog-header-inner, .blog-main, .blog-footer { width: min(100% - 32px, 560px); }.blog-nav { gap: 12px; }.blog-nav a:nth-child(2), .blog-nav a:nth-child(3) { display: none; }.blog-main { padding-top: 55px; }.blog-intro { display: block; min-height: 0; }.blog-intro h1 { letter-spacing: -2px; }.intro-note { margin: 55px 12px 10px; max-width: 300px; }.posts-section { padding-top: 95px; }.section-heading { display: block; }.search-box { margin-top: 24px; width: 100%; }.post-grid { display: block; }.post-card, .post-card-featured { min-height: 240px; margin-bottom: 12px; }.archive-section { display: block; margin-top: 85px; }.archive-years { flex-wrap: wrap; margin-top: 25px; gap: 8px; }.about-section { align-items: flex-start; }.blog-footer { display: block; }.blog-footer span { display: block; margin-top: 8px; } }
 </style>

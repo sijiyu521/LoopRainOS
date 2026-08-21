@@ -110,7 +110,7 @@ const store = new Vuex.Store({
       }
     },
     create_file(state, payload){
-      if (state.role !== 'admin' || !payload.path || !payload.name) {
+      if (!payload.path || !payload.name) {
         return
       }
       let file = {
@@ -138,14 +138,11 @@ const store = new Vuex.Store({
       if (payload.type === 'explorer') {
         obj.type = 'explorer'
         obj.openpath = payload.openpath
-      } else if (payload.type === 'text') {
-        obj.type='text'
-        obj.filesrc=payload.filesrc
-        obj.filename=payload.filename
-        obj.size=payload.size
       } else if (payload.type === 'browser') {
         obj.type='browser'
         obj.default_width= Math.min(state.fullWidth * 0.8 , 1580)
+        obj.initial_src = payload.initial_src || '/#/blog'
+        obj.initial_title = payload.initial_title || ''
       } else if (payload.type === 'music') {
         obj.type="music"
         obj.default_width=400
@@ -156,7 +153,20 @@ const store = new Vuex.Store({
       } else if (payload.type === 'terminal') {
         obj.type="terminal"
       } else if (payload.type === 'vscode') {
-        obj.type="vscode"
+        // 博客文章(.md,非本地 localStorage 文件):在系统浏览器中打开阅读页
+        let isLocalFile = payload.filesrc && payload.filesrc.indexOf('local:') === 0
+        let isMarkdown = payload.filename && /\.md$/i.test(payload.filename)
+        if (payload.filesrc && !isLocalFile && isMarkdown) {
+          obj.type = 'browser'
+          obj.default_width = Math.min(state.fullWidth * 0.8, 1580)
+          obj.initial_src = '/#/blog/post/' + encodeURIComponent(payload.filename)
+          obj.initial_title = 'LoopRain 博客'
+        } else {
+          obj.type="vscode"
+          obj.filesrc=payload.filesrc
+          obj.filename=payload.filename
+          obj.size=payload.size
+        }
       }
       state.window_list.push(obj)
       this.commit('refresh_window_focus', {uuid:new_uuid})

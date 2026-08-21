@@ -4,7 +4,7 @@
     <template v-slot:header>
       <div class=" tw-ml-4 tw-font-bold tw-tracking-wider tw-flex tw-items-center tw-select-none" style="pointer-events:none;"> 
         <img src="../../assets/images/icons/browser.png" alt="" style="pointer-events:auto;" class=" tw-w-7 tw-h-7">
-        <div class=" tw-ml-4 tw-font-bold tw-tracking-wider " style="pointer-events:none;"> Google Chrome </div>
+        <div class=" tw-ml-4 tw-font-bold tw-tracking-wider " style="pointer-events:none;"> {{ initial_title || 'Google Chrome' }} </div>
       </div>
     </template>
     <template v-slot:content>
@@ -49,10 +49,10 @@ export default {
       tipoffsetY:0,
       tipoffsetX:0,
       show_lock_tip:false,
-      input_src:"https://www.bing.com/",
-      real_src:'https://www.bing.com/',
+      input_src:this.initial_src || '/#/blog',
+      real_src:this.initial_src || '/#/blog',
       no_http:false,
-      href_stack:['https://www.bing.com/',],
+      href_stack:[this.initial_src || '/#/blog',],
       href_stack_pointer:0,
     }
   },
@@ -75,6 +75,14 @@ export default {
     default_width:{
       type:Number,
       default:1000
+    },
+    initial_src:{
+      type:String,
+      default:'/#/blog',
+    },
+    initial_title:{
+      type:String,
+      default:'',
     }
   },
   created(){

@@ -101,7 +101,7 @@ import WindowFolderSlider from './WindowFolderSlider.vue'
 import WindowSider from '../WindowBasic/WindowSider.vue'
 
 export default {
-  name: 'WindowText',
+  name: 'WindowFolder',
   components: {
     Window,
     WindowSider,
@@ -392,7 +392,7 @@ export default {
             document.body.style.cursor='default'
           },500)
           this.$store.commit('open_new_window', {
-            type:'text',
+            type:'vscode',
             filesrc: item.path,
             filename: item.name,
             size: item.size,

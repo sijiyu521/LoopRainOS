@@ -15,7 +15,6 @@
         <div class="tw-flex-none tw-w-100 tw-h-full tw-hidden lg:tw-block">
           <div class=" tw-w-full tw-h-full tw-flex tw-items-center tw-justify-center">
             <Icon :srcc="'explorer'" mode="large" class=" tw-ml-3" @button_clicked="explorer_clicked" :tagcont="'File Manager'" :cfocus="$store.state.current_focus_type==='explorer'" :fshow="has_explorer" v-if="has_explorer" @contextmenu.prevent.native="mr_clicked($event, 'explorer', has_explorer)"/>
-            <Icon :srcc="'doc'" mode="large" class=" tw-ml-3" @button_clicked="text_clicked" :tagcont="'Text Editor'" :cfocus="$store.state.current_focus_type==='text'" :fshow="has_text" v-if="has_text" @contextmenu.prevent.native="mr_clicked($event, 'text', has_text)"/>
             <Icon :srcc="'browser'" mode="large"  class=" tw-ml-3" @button_clicked="browser_clicked" :tagcont="'Browser'" :cfocus="$store.state.current_focus_type==='browser'" :fshow="has_browser" @contextmenu.prevent.native="mr_clicked($event, 'browser', has_browser)"/>
             <Icon :srcc="'music'" mode="large"  class=" tw-ml-3" @button_clicked="music_clicked" :tagcont="'Music'" :cfocus="$store.state.current_focus_type==='music'" :fshow="has_music" @contextmenu.prevent.native="mr_clicked($event, 'music', has_music)"/>
             <Icon :srcc="'vscode'" mode="large"  class=" tw-ml-3" @button_clicked="vscode_clicked" :tagcont="'vscode'" :cfocus="$store.state.current_focus_type==='vscode'" :fshow="has_vscode" @contextmenu.prevent.native="mr_clicked($event, 'vscode', has_vscode)"/>
@@ -65,7 +64,6 @@ export default {
       date_date:1,
       date_weekday:0,
       show_drawer:true,
-      has_text:false,
       has_explorer:false,
       has_music:false,
       has_browser:false,
@@ -98,7 +96,6 @@ export default {
     global_window_list(){
       let status = {
         explorer:false,
-        text:false,
         browser:false,
         music:false,
         settings:false,
@@ -211,12 +208,6 @@ export default {
         this.$store.commit('open_new_window', {'type':'vscode'})
       }
       this.$store.commit('refresh_window_focus', {'type':'vscode'})
-    },
-    text_clicked() {
-      if (this.window_type_all_hide_or_at_the_top({'type':'text'})) {
-        this.$store.commit('switch_global_window_show_status', {'type':'text'})
-      }
-      this.$store.commit('refresh_window_focus', {'type':'text'})
     },
     explorer_clicked() {
       if (this.window_type_all_hide_or_at_the_top({'type':'explorer'})) {
