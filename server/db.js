@@ -21,7 +21,7 @@ db.defaults({
   users: [
     {
       username: 'munei',
-      password: 'loo123!@',
+      password: 'LoopRain@2026',
       role: 'admin',
       avatar: '',
       created_at: new Date().toISOString(),
