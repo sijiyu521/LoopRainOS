@@ -18,7 +18,7 @@
             <Icon :srcc="'browser'" mode="large"  class=" tw-ml-3" @button_clicked="browser_clicked" :tagcont="'Browser'" :cfocus="$store.state.current_focus_type==='browser'" :fshow="has_browser" @contextmenu.prevent.native="mr_clicked($event, 'browser', has_browser)"/>
             <Icon :srcc="'music'" mode="large"  class=" tw-ml-3" @button_clicked="music_clicked" :tagcont="'Music'" :cfocus="$store.state.current_focus_type==='music'" :fshow="has_music" @contextmenu.prevent.native="mr_clicked($event, 'music', has_music)"/>
             <Icon :srcc="'vscode'" mode="large"  class=" tw-ml-3" @button_clicked="vscode_clicked" :tagcont="'vscode'" :cfocus="$store.state.current_focus_type==='vscode'" :fshow="has_vscode" @contextmenu.prevent.native="mr_clicked($event, 'vscode', has_vscode)"/>
-            <Icon :srcc="'settings'" mode="large"  class=" tw-ml-3" @button_clicked="settings_clicked" :tagcont="'Settings'" :cfocus="$store.state.current_focus_type==='settings'" :fshow="has_settings" @contextmenu.prevent.native="mr_clicked($event, 'settings', has_settings)"/>
+            <Icon :srcc="'settings'" mode="large"  class=" tw-ml-3" @button_clicked="settings_clicked" :tagcont="'Settings'" :cfocus="$store.state.current_focus_type==='settings'" :fshow="has_settings" v-if="isAdmin" @contextmenu.prevent.native="mr_clicked($event, 'settings', has_settings)"/>
             <Icon :srcc="'shell'" mode="large"  class=" tw-ml-3" @button_clicked="terminal_clicked" :tagcont="'Terminal'" :cfocus="$store.state.current_focus_type==='terminal'" :fshow="has_terminal" @contextmenu.prevent.native="mr_clicked($event, 'terminal', has_terminal)"/>
           </div>
         </div>
@@ -122,6 +122,9 @@ export default {
     },
     display_article_num(){
       return this.$store.state.display_article_num
+    },
+    isAdmin(){
+      return this.$store.state.role === 'admin'
     },
   },
   methods:{

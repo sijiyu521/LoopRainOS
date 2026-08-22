@@ -190,6 +190,10 @@ export default {
     enter_system(){
       this.login_locked = false
       this.$store.commit('set_role', this.login_mode)
+      // 从后端拉取账号信息（用户名/头像/壁纸），以服务器 db.json 为准
+      if (this.login_mode === 'admin') {
+        this.$store.dispatch('init_from_backend')
+      }
       this.show_loading_bar = false
       clearInterval(this.timer)
       clearTimeout(this.timer2)

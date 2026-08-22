@@ -71,7 +71,20 @@ const router = new VueRouter({
   routes
 })
 
+const inIframe = (() => {
+  try {
+    return window.self !== window.top
+  } catch (e) {
+    return true
+  }
+})()
+
 router.beforeEach((to, from, next) => {
+  // 当博客页面运行在浏览器窗口(iframe)中时，禁止导航到桌面系统，否则会导致"桌面套桌面"嵌套渲染
+  if (inIframe && to.path.startsWith('/desktop')) {
+    next('/blog')
+    return
+  }
   if (to.matched.some(record => record.meta.requiresAuth) && !store.state.role) {
     next({name:'LoginPage'})
     return

@@ -12,6 +12,10 @@ module.exports = {
         pathRewrite:{
           '^/dev':''
         }
+      },
+      "/api":{
+        target:"http://127.0.0.1:8079",
+        changeOrigin:true
       }
     },
   },

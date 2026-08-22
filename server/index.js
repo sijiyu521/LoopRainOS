@@ -7,6 +7,7 @@ const cors = require('cors')
 const bodyParser = require('body-parser')
 const path = require('path')
 const fs = require('fs')
+const { URL } = require('url')
 
 const db = require('./db')
 
@@ -45,10 +46,29 @@ app.post('/api/auth/login', (req, res) => {
 app.get('/api/auth/user', (req, res) => {
   const user = db.get('users').first().value()
   if (user) {
-    res.json({ success: true, username: user.username, avatar: user.avatar })
+    res.json({ success: true, username: user.username, avatar: user.avatar, role: user.role, display_name: user.display_name || user.username })
   } else {
     res.status(404).json({ success: false, message: 'User not found' })
   }
+})
+
+// Combined endpoint: user info + settings, used at app startup to restore state
+app.get('/api/auth/me', (req, res) => {
+  const user = db.get('users').first().value()
+  if (!user) {
+    return res.status(404).json({ success: false, message: 'User not found' })
+  }
+  const settings = db.get('settings').value()
+  res.json({
+    success: true,
+    user: {
+      username: user.username,
+      avatar: user.avatar,
+      role: user.role,
+      display_name: user.display_name || user.username,
+    },
+    settings,
+  })
 })
 
 app.put('/api/auth/password', (req, res) => {
@@ -84,7 +104,6 @@ app.put('/api/auth/avatar', (req, res) => {
   db.get('users').find({ role: 'admin' }).assign({ avatar: avatar || '' }).write()
   res.json({ success: true })
 })
-
 // ---------- Settings Routes ----------
 app.get('/api/settings', (req, res) => {
   const settings = db.get('settings').value()
@@ -299,6 +318,70 @@ app.post('/api/import', (req, res) => {
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() })
+})
+
+// ---------- Web Proxy (real browser) ----------
+// Proxies external websites through the backend so pages can be embedded
+// in the browser iframe even when they send X-Frame-Options / CSP frame-ancestors.
+const UA = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36'
+
+// Rewrite an HTML body so that relative URLs resolve against the target page.
+// Sub-resources (css/js/img) are fetched directly by the browser from the
+// original domain — no rewriting needed. Only the top document must flow
+// through the proxy (so X-Frame-Options / CSP can be stripped).
+function rewriteHtml(html, baseUrl) {
+  // Use a marker so the <base> tag itself is never rewritten below.
+  html = html.replace(/<base\b[^>]*>/gi, '')
+  html = html.replace(/<head([^>]*)>/i, (m, attrs) => {
+    return `<head${attrs}><base href="${baseUrl}">`
+  })
+  return html
+}
+
+app.get('/api/proxy', async (req, res) => {
+  const target = req.query.url
+  if (!target) {
+    return res.status(400).json({ success: false, message: 'url required' })
+  }
+  let url
+  try {
+    url = new URL(target.startsWith('http') ? target : 'https://' + target)
+  } catch (e) {
+    return res.status(400).json({ success: false, message: 'Invalid url' })
+  }
+  if (!['http:', 'https:'].includes(url.protocol)) {
+    return res.status(400).json({ success: false, message: 'Only http/https supported' })
+  }
+  try {
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 15000)
+    const resp = await fetch(url.href, {
+      headers: {
+        'User-Agent': UA,
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+      },
+      redirect: 'follow',
+      signal: controller.signal,
+    })
+    clearTimeout(timer)
+    const contentType = resp.headers.get('content-type') || ''
+    const isHtml = contentType.includes('text/html') || resp.headers.get('content-type') == null
+    let body = await resp.text()
+    if (isHtml) {
+      body = rewriteHtml(body, url.href)
+    }
+    // Remove frame-blocking headers so the site can be embedded
+    res.removeHeader('Content-Security-Policy')
+    res.setHeader('Content-Security-Policy', 'frame-ancestors *; upgrade-insecure-requests')
+    res.setHeader('X-Frame-Options', 'ALLOWALL')
+    res.setHeader('Content-Type', contentType || 'text/html; charset=utf-8')
+    res.setHeader('Proxy-Agent', 'LoopRainOS')
+    res.send(body)
+  } catch (e) {
+    console.error('Proxy error:', e.message)
+    res.status(502).json({ success: false, message: 'Failed to fetch page: ' + e.message })
+  }
 })
 
 // ==================== Start Server ====================

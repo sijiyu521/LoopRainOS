@@ -1,0 +1,25 @@
+# ============================================
+# LoopRainOS 后端 Dockerfile
+# ============================================
+FROM node:18-alpine
+
+WORKDIR /app
+
+# 复制后端依赖文件
+COPY server/package*.json ./server/
+
+# 安装依赖
+RUN cd server && npm install --production
+
+# 复制后端源码
+COPY server/ ./server/
+
+# 复制 blog 目录（供 generate.py 使用）
+COPY blog/ ./blog/
+COPY generate.py ./
+
+# 暴露端口
+EXPOSE 8079
+
+# 启动后端服务
+CMD ["node", "server/index.js"]

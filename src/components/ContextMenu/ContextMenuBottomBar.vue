@@ -52,6 +52,9 @@ export default {
     context_menu_y_r(){
       return this.context_menu_y - 80
     },
+    isAdmin(){
+      return this.$store.state.role === 'admin'
+    },
   },
   methods:{
     fullclicked(event){
@@ -59,6 +62,11 @@ export default {
       event.stopPropagation()
     },
     open_new_window(){
+      // settings 仅管理员可打开
+      if (this.target === 'settings' && !this.isAdmin) {
+        this.$store.commit('hide_context_menu')
+        return
+      }
       if (!this.mode && this.allow_open.indexOf(this.target) >= 0) {
         this.$store.commit('open_new_window', {'type':this.target})
         this.$store.commit('refresh_window_focus', {'type':this.target})

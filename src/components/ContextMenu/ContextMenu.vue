@@ -85,7 +85,7 @@ export default {
       this.$store.commit('refresh_window_focus', {'type':'terminal'})
       this.$store.commit('hide_context_menu')
     },
-    async new_file(){
+    new_file(){
       let id = this.$utils.get_uuid()
       let path = 'local:' + id
       let name = window.prompt('New file name', 'untitled.md')
@@ -98,13 +98,10 @@ export default {
       }
       this.$store.commit('create_file', {path:path, name:name})
       localStorage.setItem(path, '')
-      // Sync to backend
-      try {
-        await api.createFile({ path, name, size: 0 })
-        await api.saveFileContent(path, '')
-      } catch (e) {
-        console.warn('Failed to sync new file to backend:', e)
-      }
+      // Sync to backend (fire and forget)
+      api.createFile({ path, name, size: 0 })
+        .then(() => api.saveFileContent(path, ''))
+        .catch((e) => { console.warn('Failed to sync new file to backend:', e) })
       this.$store.commit('open_new_window', {type:'vscode', filesrc:path, filename:name, size:0})
       this.$store.commit('hide_context_menu')
     },

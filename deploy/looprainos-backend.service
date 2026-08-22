@@ -1,0 +1,16 @@
+[Unit]
+Description=LoopRainOS Backend Server
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/root/LoopRainOS/server
+ExecStart=/usr/bin/node /root/LoopRainOS/server/index.js
+Restart=on-failure
+RestartSec=5
+Environment=NODE_ENV=production
+Environment=PORT=8079
+
+[Install]
+WantedBy=multi-user.target

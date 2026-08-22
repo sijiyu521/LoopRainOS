@@ -13,8 +13,28 @@
     "wallpaper_image": "",
     "wallpaper_color": "#20252b"
   },
-  "files": [],
-  "file_contents": {},
+  "files": [
+    {
+      "name": "test-persist.md",
+      "path": "local:fc19cd9b-d33b-8226-484f-9ab2c2a491d3",
+      "size": 0,
+      "lastedittime": 1787294943,
+      "title": "",
+      "abstract": ""
+    },
+    {
+      "name": "untitled.md",
+      "path": "local:7941268a-3986-8529-1d67-806f1d2d6dd4",
+      "size": 0,
+      "lastedittime": 1787283433,
+      "title": "",
+      "abstract": ""
+    }
+  ],
+  "file_contents": {
+    "local:7941268a-3986-8529-1d67-806f1d2d6dd4": "g",
+    "local:fc19cd9b-d33b-8226-484f-9ab2c2a491d3": "# 这是持久化测试\n\n这个内容应该保存到后端数据库中。"
+  },
   "file_names": {},
   "blog_posts": []
 }

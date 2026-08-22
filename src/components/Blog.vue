@@ -13,7 +13,7 @@
           <router-link to="/blog" exact>首页</router-link>
           <a href="#archive">归档</a>
           <a href="#about">关于</a>
-          <router-link to="/desktop">进入桌面</router-link>
+          <router-link v-if="!inIframe" to="/desktop">进入桌面</router-link>
         </nav>
       </div>
     </header>
@@ -123,6 +123,7 @@ export default {
     return { articles: [], searchText: '', selectedCategory: '全部', articleContent: '', showTopButton: false, interludeTimer: null }
   },
   computed: {
+    inIframe () { return (() => { try { return window.self !== window.top } catch (e) { return true } })() },
     isArticle () { return Boolean(this.$route.params.postfilename) },
     categories () { return ['全部'].concat(Array.from(new Set(this.articles.map(article => article.category)))) },
     article () { return this.articles.find(item => item.name === this.$route.params.postfilename) || null },

@@ -58,10 +58,16 @@ const store = new Vuex.Store({
   mutations: {
     set_role(state, role){
       state.role = role
+      state.window_list = []
+      state.current_focus = ""
+      state.current_focus_type = ""
       sessionStorage.setItem('looprainos-role', role)
     },
     clear_role(state){
       state.role = ''
+      state.window_list = []
+      state.current_focus = ""
+      state.current_focus_type = ""
       sessionStorage.removeItem('looprainos-role')
     },
     set_avatar(state, avatar){
@@ -400,6 +406,39 @@ const store = new Vuex.Store({
     display_article_num_changed(state, num) {
       state.display_article_num = num
     }
+  },
+  actions: {
+    /**
+     * 应用启动 / 登录成功后调用：
+     * 从后端拉取用户信息(用户名/头像)与设置(壁纸)，覆盖本地 state，
+     * 实现"账号信息以服务器 db.json 为准"。
+     */
+    async init_from_backend({ commit, state }) {
+      try {
+        const res = await api.getMe()
+        if (res.data && res.data.success) {
+          const { user, settings } = res.data
+          // 管理员账号信息（仅管理员角色登录后应用）
+          if (user && user.role === 'admin') {
+            commit('set_admin_username', user.username || state.admin_username)
+            if (user.avatar) {
+              commit('set_avatar', user.avatar)
+            }
+          }
+          // 壁纸设置
+          if (settings) {
+            if (settings.wallpaper_mode) commit('set_wallpaper_mode', settings.wallpaper_mode)
+            if (settings.wallpaper_image) commit('set_wallpaper_image', settings.wallpaper_image)
+            if (settings.wallpaper_color) commit('set_wallpaper_color', settings.wallpaper_color)
+          }
+          return true
+        }
+        return false
+      } catch (e) {
+        console.warn('Failed to init from backend:', e)
+        return false
+      }
+    },
   },
 })
 

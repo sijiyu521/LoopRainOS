@@ -150,6 +150,7 @@
 <script>
 import Window from '../WindowBasic/Window.vue'
 import WindowSettingIcon from './WindowSettingIcon.vue'
+import api from '../../network/api'
 
 export default {
   name: 'WindowSettings',
@@ -226,10 +227,6 @@ export default {
       this.username_message = 'Administrator name updated.'
     },
     save_password(){
-      if (this.current_password !== this.$store.state.admin_password) {
-        this.password_message = 'Current password is incorrect.'
-        return
-      }
       if (this.new_password.length < 4) {
         this.password_message = 'New password must be at least 4 characters.'
         return
@@ -238,11 +235,31 @@ export default {
         this.password_message = 'New passwords do not match.'
         return
       }
-      this.$store.commit('set_admin_password', this.new_password)
-      this.current_password = ''
-      this.new_password = ''
-      this.confirm_password = ''
-      this.password_message = 'Password updated.'
+      // 交由后端校验旧密码，确保与服务器 db.json 一致
+      api.changePassword(this.current_password, this.new_password)
+      .then((res) => {
+        if (res.data && res.data.success) {
+          this.$store.commit('set_admin_password', this.new_password)
+          this.current_password = ''
+          this.new_password = ''
+          this.confirm_password = ''
+          this.password_message = 'Password updated.'
+        } else {
+          this.password_message = 'Current password is incorrect.'
+        }
+      })
+      .catch(() => {
+        // 后端不可用时退化为本地校验
+        if (this.current_password !== this.$store.state.admin_password) {
+          this.password_message = 'Current password is incorrect.'
+          return
+        }
+        this.$store.commit('set_admin_password', this.new_password)
+        this.current_password = ''
+        this.new_password = ''
+        this.confirm_password = ''
+        this.password_message = 'Password updated.'
+      })
     },
     choose_avatar(){
       this.$refs.avatar_input.click()

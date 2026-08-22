@@ -1,0 +1,37 @@
+# ============================================
+# LoopRainOS 前端 Dockerfile
+# 多阶段构建：先构建 Vue 项目，再用 Nginx 提供服务
+# ============================================
+
+# ---- 阶段 1: 构建 ----
+FROM node:18-alpine AS builder
+
+WORKDIR /app
+
+# 安装 Python 用于 generate.py
+RUN apk add --no-cache python3
+
+# 复制依赖文件
+COPY package*.json ./
+RUN npm install --legacy-peer-deps
+
+# 复制源码
+COPY . .
+
+# 生成文件索引并构建
+RUN python3 generate.py || python generate.py || true
+ENV NODE_OPTIONS="--openssl-legacy-provider"
+RUN npm run build
+
+# ---- 阶段 2: 运行时 ----
+FROM nginx:alpine
+
+# 复制构建产物
+COPY --from=builder /app/docs /usr/share/nginx/html
+
+# 复制 Nginx 配置
+COPY deploy/nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]

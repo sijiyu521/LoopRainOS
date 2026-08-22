@@ -16,6 +16,10 @@ const api = {
   getUser() {
     return request.get({ url: `${API_BASE}/auth/user` })
   },
+  // Combined user + settings, used to restore app state
+  getMe() {
+    return request.get({ url: `${API_BASE}/auth/me` })
+  },
   changePassword(oldPassword, newPassword) {
     return request.put({ url: `${API_BASE}/auth/password`, data: { oldPassword, newPassword } })
   },

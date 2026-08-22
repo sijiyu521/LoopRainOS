@@ -30,6 +30,8 @@ export default {
     window.onscroll = () => {
       this.$store.commit('refresh_scroll')
     }
+    // 从后端拉取账号信息与设置，覆盖本地 localStorage 旧值
+    this.$store.dispatch('init_from_backend')
     // Migrate localStorage to backend
     migrateToBackend()
   },
