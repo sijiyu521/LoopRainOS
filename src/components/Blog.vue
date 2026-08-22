@@ -115,6 +115,7 @@
 <script>
 import MarkdownItVue from 'markdown-it-vue'
 import 'markdown-it-vue/dist/markdown-it-vue.css'
+import api from '../network/api'
 
 export default {
   name: 'Blog',
@@ -188,7 +189,38 @@ export default {
         return result
       }, [])
     },
+    // 从后端 API 读文章（db.json 动态文章 + 静态 md 合并），失败时退回 map.json
     loadArticles () {
+      api.getBlogPosts().then((res) => {
+        if (res.data && res.data.success && Array.isArray(res.data.posts) && res.data.posts.length > 0) {
+          const posts = res.data.posts.map(post => {
+            // 兼容旧 map.json 字段结构
+            let lastedittime = post.lastedittime
+            if (!lastedittime && post.updated_at) {
+              lastedittime = Math.floor(new Date(post.updated_at).getTime() / 1000)
+            }
+            return {
+              name: post.filename,
+              filename: post.filename,
+              path: 'api://' + post.filename,
+              title: post.title || post.filename,
+              abstract: post.abstract || '',
+              lastedittime,
+              size: post.size || 0,
+              category: '未分类',
+              from_api: true,
+            }
+          })
+          this.articles = posts.sort((a, b) => (b.lastedittime || 0) - (a.lastedittime || 0))
+          this.loadArticleContent()
+          return
+        }
+        this.loadArticlesFromStatic()
+      }).catch(() => {
+        this.loadArticlesFromStatic()
+      })
+    },
+    loadArticlesFromStatic () {
       this.$axios.raw('map.json').then(response => {
         this.articles = this.flatten(response.data).sort((a, b) => b.lastedittime - a.lastedittime)
         this.loadArticleContent()
@@ -196,7 +228,16 @@ export default {
     },
     loadArticleContent () {
       this.articleContent = ''
-      if (!this.article || !this.article.path) return
+      if (!this.article) return
+      if (this.article.from_api) {
+        api.getBlogPost(this.article.filename).then((res) => {
+          if (res.data && res.data.success && res.data.post) {
+            this.articleContent = res.data.post.content || ''
+          }
+        }).catch(() => {})
+        return
+      }
+      if (!this.article.path) return
       this.$axios.raw(this.article.path).then(response => { this.articleContent = response.data.data || '' }).catch(() => {})
     },
     formatDate (timestamp) {

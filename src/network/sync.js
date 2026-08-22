@@ -42,7 +42,6 @@ export async function migrateToBackend() {
     const wallpaperImage = localStorage.getItem('looprainos-wallpaper-image') || ''
     const wallpaperColor = localStorage.getItem('looprainos-wallpaper-color') || '#20252b'
     const username = localStorage.getItem('looprainos-admin-username') || ''
-    const password = localStorage.getItem('looprainos-admin-password') || ''
 
     // Collect file contents (keys starting with 'local:')
     const fileContents = {}
@@ -66,7 +65,7 @@ export async function migrateToBackend() {
     }
     if (avatar) importData.avatar = avatar
     if (username && username !== 'Administrator') importData.username = username
-    if (password && password !== '12345678') importData.password = password
+    // 密码不再存前端 localStorage，不参与迁移
 
     await api.importData(importData)
     localStorage.setItem(MIGRATED_FLAG, 'true')

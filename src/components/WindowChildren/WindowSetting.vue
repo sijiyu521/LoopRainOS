@@ -15,6 +15,8 @@
           <WindowSettingIcon :tag="'Skills'" :img="'skills'" :selected_tag="selected_tag"  @click.native="{selected_tag = 'Skills';selected_tag_2 = 'Badges'}"/>
           <div class="settings-nav-title settings-nav-title-spaced">Appearance</div>
           <WindowSettingIcon :tag="'Wallpaper'" :mdi="'image'" :selected_tag="selected_tag"  @click.native="selected_tag = 'Wallpaper'"/>
+          <div class="settings-nav-title settings-nav-title-spaced">Content</div>
+          <WindowSettingIcon :tag="'Blog'" :mdi="'pencil-ruler'" :selected_tag="selected_tag"  @click.native="selected_tag = 'Blog'"/>
           <div class="settings-nav-title settings-nav-title-spaced">More</div>
           <WindowSettingIcon :tag="'Resume'" :img="'paint'" :selected_tag="selected_tag"  @click.native="selected_tag = 'Resume'"/>
         </div>
@@ -138,6 +140,49 @@
                   <div class="tw-text-4xl tw-mt-2 tw-tracking-wider"> Coming Soon </div>
                 </div>
               </div>
+              <div class="blog-manager tw-w-full tw-h-full" v-if="selected_tag === 'Blog'">
+                <div class="blog-manager-heading">
+                  <div>
+                    <div class="wallpaper-title">Blog Manager</div>
+                    <div class="wallpaper-subtitle">Write and manage blog posts from your browser</div>
+                  </div>
+                  <button class="blog-btn blog-btn-primary" @click="start_new_post"><v-icon small>mdi-plus</v-icon> New post</button>
+                </div>
+
+                <div v-if="!editing" class="blog-list">
+                  <div v-if="blog_posts.length === 0" class="blog-empty">暂无文章，点击 "New post" 开始写作。</div>
+                  <div v-for="post in blog_posts" :key="post.filename" class="blog-list-item">
+                    <div class="blog-list-item-info">
+                      <div class="blog-list-item-title">{{ post.title || post.filename }}</div>
+                      <div class="blog-list-item-meta">
+                        <span>{{ post.filename }}</span>
+                        <span v-if="post.updated_at">· {{ format_time(post.updated_at) }}</span>
+                        <span v-if="post.source === 'static'">· 静态</span>
+                      </div>
+                    </div>
+                    <div class="blog-list-item-actions">
+                      <button class="blog-btn" @click="edit_post(post)" title="编辑"><v-icon small>mdi-pencil</v-icon></button>
+                      <button class="blog-btn" @click="delete_post(post)" title="删除"><v-icon small>mdi-delete</v-icon></button>
+                    </div>
+                  </div>
+                </div>
+
+                <div v-else class="blog-editor">
+                  <div class="blog-editor-fields">
+                    <input v-model="editing_filename" class="blog-input" placeholder="文件名，如 my-post.md" :disabled="editing_existing">
+                    <input v-model="editing_title" class="blog-input" placeholder="文章标题 (可选，默认取 # 一级标题)">
+                  </div>
+                  <textarea v-model="editing_content" class="blog-textarea" placeholder="# 标题&#10;&#10;在这里写 Markdown 内容…" spellcheck="false"></textarea>
+                  <div class="blog-editor-footer">
+                    <span v-if="blog_message" class="blog-message">{{ blog_message }}</span>
+                    <span v-else class="blog-hint">支持 Markdown · 保存后同步写入 blog/ 目录</span>
+                    <div class="blog-editor-actions">
+                      <button class="blog-btn" @click="cancel_edit">Cancel</button>
+                      <button class="blog-btn blog-btn-primary" @click="save_post" :disabled="blog_saving">Save post</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
             
           </div>
@@ -168,6 +213,15 @@ export default {
       new_password:'',
       confirm_password:'',
       password_message:'',
+      // Blog manager
+      blog_posts:[],
+      editing:false,
+      editing_existing:false,
+      editing_filename:'',
+      editing_title:'',
+      editing_content:'',
+      blog_message:'',
+      blog_saving:false,
     }
   },
   props:{
@@ -195,8 +249,14 @@ export default {
   },
   mounted(){
     this.username_draft = this.admin_username
+    this.load_blog_posts()
   },
   watch:{
+    selected_tag(val){
+      if (val === 'Blog') {
+        this.load_blog_posts()
+      }
+    }
   },
   computed:{
     avatar(){
@@ -235,11 +295,10 @@ export default {
         this.password_message = 'New passwords do not match.'
         return
       }
-      // 交由后端校验旧密码，确保与服务器 db.json 一致
+      // 后端校验旧密码并更新，密码不存前端
       api.changePassword(this.current_password, this.new_password)
       .then((res) => {
         if (res.data && res.data.success) {
-          this.$store.commit('set_admin_password', this.new_password)
           this.current_password = ''
           this.new_password = ''
           this.confirm_password = ''
@@ -249,16 +308,7 @@ export default {
         }
       })
       .catch(() => {
-        // 后端不可用时退化为本地校验
-        if (this.current_password !== this.$store.state.admin_password) {
-          this.password_message = 'Current password is incorrect.'
-          return
-        }
-        this.$store.commit('set_admin_password', this.new_password)
-        this.current_password = ''
-        this.new_password = ''
-        this.confirm_password = ''
-        this.password_message = 'Password updated.'
+        this.password_message = 'Current password is incorrect.'
       })
     },
     choose_avatar(){
@@ -307,6 +357,95 @@ export default {
     },
     wallpaper_color_changed(event){
       this.$store.commit('set_wallpaper_color', event.target.value)
+    },
+    // ---------- Blog manager ----------
+    format_time(iso){
+      if (!iso) return ''
+      const d = new Date(iso)
+      return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0') + ' ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0')
+    },
+    load_blog_posts(){
+      api.getBlogPosts().then((res) => {
+        if (res.data && res.data.success && Array.isArray(res.data.posts)) {
+          this.blog_posts = res.data.posts
+        }
+      }).catch(() => { this.blog_posts = [] })
+    },
+    start_new_post(){
+      this.editing = true
+      this.editing_existing = false
+      this.editing_filename = ''
+      this.editing_title = ''
+      this.editing_content = ''
+      this.blog_message = ''
+    },
+    edit_post(post){
+      this.editing = true
+      this.editing_existing = true
+      this.editing_filename = post.filename
+      this.editing_title = post.title || ''
+      this.editing_content = post.content || ''
+      this.blog_message = ''
+      // 已加载 content 则直接用，否则从后端拉全文
+      if (!this.editing_content) {
+        api.getBlogPost(post.filename).then((res) => {
+          if (res.data && res.data.success && res.data.post) {
+            this.editing_content = res.data.post.content || ''
+          }
+        }).catch(() => {})
+      }
+    },
+    cancel_edit(){
+      this.editing = false
+      this.blog_message = ''
+    },
+    save_post(){
+      const filename = (this.editing_filename || '').trim()
+      if (!filename) {
+        this.blog_message = '请输入文件名（如 my-post.md）'
+        return
+      }
+      if (!/\.md$/i.test(filename) || filename.indexOf('..') !== -1 || filename.indexOf('/') !== -1) {
+        this.blog_message = '文件名必须是以 .md 结尾的合法名称'
+        return
+      }
+      this.blog_saving = true
+      this.blog_message = ''
+      const req = this.editing_existing
+        ? api.updateBlogPost(filename, { title: this.editing_title, content: this.editing_content })
+        : api.createBlogPost(filename, this.editing_title, this.editing_content)
+      req.then((res) => {
+        this.blog_saving = false
+        if (res.data && res.data.success) {
+          this.blog_message = '已保存 ✓'
+          this.editing = false
+          this.load_blog_posts()
+        } else {
+          this.blog_message = (res.data && res.data.message) || '保存失败'
+        }
+      }).catch((err) => {
+        this.blog_saving = false
+        const msg = err && err.response && err.response.data && err.response.data.message
+        this.blog_message = msg || '保存失败，请检查后端连接'
+      })
+    },
+    delete_post(post){
+      const filename = post.filename
+      if (!window.confirm('确定删除文章「' + (post.title || filename) + '」吗？此操作不可撤销。')) {
+        return
+      }
+      api.deleteBlogPost(filename).then((res) => {
+        if (res.data && res.data.success) {
+          if (this.editing && this.editing_filename === filename) {
+            this.editing = false
+          }
+          this.load_blog_posts()
+        } else {
+          window.alert((res.data && res.data.message) || '删除失败')
+        }
+      }).catch(() => {
+        window.alert('删除失败，请检查后端连接')
+      })
     },
     mr_clicked(){
       this.$store.commit('show_context_menu')
@@ -511,5 +650,165 @@ export default {
 
 .setting-action:hover {
   background: #dfe5e8;
+}
+
+/* ---------- Blog manager ---------- */
+.blog-manager {
+  padding: 28px;
+  overflow: auto;
+  color: #263238;
+}
+
+.blog-manager-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.blog-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 12px;
+  border-radius: 7px;
+  border: 1px solid #e0e6e9;
+  background: #fafcfd;
+  color: #37474f;
+  font-size: 12px;
+  cursor: pointer;
+  outline: none;
+}
+
+.blog-btn:hover {
+  background: #eef2f4;
+}
+
+.blog-btn:disabled {
+  opacity: .5;
+  cursor: default;
+}
+
+.blog-btn-primary {
+  background: #263238;
+  border-color: #263238;
+  color: #fff;
+}
+
+.blog-btn-primary:hover {
+  background: #37474f;
+}
+
+.blog-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.blog-empty {
+  padding: 40px 0;
+  color: #90a4ae;
+  font-size: 13px;
+  text-align: center;
+}
+
+.blog-list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid #e8edf0;
+  border-radius: 8px;
+  background: #fafcfd;
+}
+
+.blog-list-item:hover {
+  border-color: #d86b8a;
+}
+
+.blog-list-item-title {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.blog-list-item-meta {
+  margin-top: 3px;
+  color: #90a4ae;
+  font-size: 11px;
+}
+
+.blog-list-item-actions {
+  display: flex;
+  gap: 6px;
+  flex: none;
+}
+
+.blog-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+}
+
+.blog-editor-fields {
+  display: flex;
+  gap: 10px;
+}
+
+.blog-input {
+  flex: 1;
+  padding: 8px 10px;
+  border: 1px solid #dfe5e8;
+  border-radius: 6px;
+  outline: none;
+  font-size: 13px;
+  color: #263238;
+}
+
+.blog-input:focus {
+  border-color: #d86b8a;
+}
+
+.blog-textarea {
+  flex: 1;
+  min-height: 180px;
+  resize: none;
+  padding: 12px;
+  border: 1px solid #dfe5e8;
+  border-radius: 8px;
+  outline: none;
+  font-family: 'Cascadia Code', Consolas, monospace;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: #263238;
+  background: #fdfefe;
+}
+
+.blog-textarea:focus {
+  border-color: #d86b8a;
+}
+
+.blog-editor-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.blog-hint {
+  color: #90a4ae;
+  font-size: 11.5px;
+}
+
+.blog-message {
+  color: #d86b8a;
+  font-size: 12px;
+}
+
+.blog-editor-actions {
+  display: flex;
+  gap: 8px;
+  flex: none;
 }
 </style>

@@ -217,29 +217,126 @@ app.get('/api/musics', (req, res) => {
 })
 
 // ---------- Blog Routes ----------
+// 博客文章数据源：server/data/db.json 中的 blog_posts（浏览器内创建/编辑）
+// 每次写入 db.json 时同步落盘 blog/*.md，保持与静态生成器（generate.py）
+// 产物兼容；读取时 db.json 优先，blog/*.md 静态文件兜底。
+
+const blogDir = path.join(__dirname, '..', 'blog')
+
+// 从 blog/ 目录扫描静态文章（与 generate.py 兼容的元数据格式）
+function scanStaticBlogPosts () {
+  const posts = []
+  if (!fs.existsSync(blogDir)) return posts
+  const files = fs.readdirSync(blogDir)
+  for (const file of files) {
+    if (!/\.md$/i.test(file)) continue
+    const filePath = path.join(blogDir, file)
+    let title = file.replace(/\.md$/i, '')
+    let abstract = ''
+    try {
+      const content = fs.readFileSync(filePath, 'utf8')
+      const lines = content.split('\n')
+      for (const line of lines) {
+        if (line.indexOf('# ') === 0) {
+          title = line.slice(2).trim() || title
+          break
+        }
+      }
+      // 取首个非空正文行做摘要
+      for (const line of lines) {
+        const trimmed = line.trim()
+        if (!trimmed || trimmed[0] === '#' || trimmed[0] === '-' || trimmed[0] === '>' || trimmed[0] === '`') continue
+        abstract = trimmed.length > 120 ? trimmed.slice(0, 120) + '...' : trimmed
+        break
+      }
+    } catch (e) {}
+    const stat = fs.statSync(filePath)
+    posts.push({
+      filename: file,
+      title,
+      abstract,
+      size: stat.size,
+      lastedittime: Math.floor(stat.mtimeMs / 1000),
+      created_at: stat.mtime.toISOString(),
+      updated_at: stat.mtime.toISOString(),
+      source: 'static',
+    })
+  }
+  return posts
+}
+
+// db.json 动态文章补全展示字段（title 从内容首行 # 提取、abstract 摘要）
+function decorateDbPost (post) {
+  const p = Object.assign({}, post)
+  const lines = (p.content || '').split('\n')
+  for (const line of lines) {
+    if (line.indexOf('# ') === 0) {
+      p.title = line.slice(2).trim() || p.title
+      break
+    }
+  }
+  for (const line of lines) {
+    const trimmed = line.trim()
+    if (!trimmed || trimmed[0] === '#' || trimmed[0] === '-' || trimmed[0] === '>' || trimmed[0] === '`') continue
+    p.abstract = trimmed.length > 120 ? trimmed.slice(0, 120) + '...' : trimmed
+    break
+  }
+  return p
+}
+
+// 同步落盘 blog/*.md（静态产物兼容），文件名安全校验
+function syncPostToFile (filename, content) {
+  if (!filename || !/\.md$/i.test(filename) || filename.indexOf('..') !== -1 || filename.indexOf('/') !== -1) {
+    return false
+  }
+  try {
+    if (!fs.existsSync(blogDir)) fs.mkdirSync(blogDir, { recursive: true })
+    fs.writeFileSync(path.join(blogDir, filename), content || '', 'utf8')
+    return true
+  } catch (e) {
+    console.error('[blog] sync file failed:', e.message)
+    return false
+  }
+}
+
 app.get('/api/blog/posts', (req, res) => {
-  const posts = db.get('blog_posts').value()
-  res.json({ success: true, posts })
+  const dbPosts = (db.get('blog_posts').value() || []).map(decorateDbPost)
+  const staticPosts = scanStaticBlogPosts()
+  // 合并：db 文章优先（浏览器内编辑过的），静态 md 兜底
+  const merged = dbPosts.concat(staticPosts.filter(s => !dbPosts.some(d => d.filename === s.filename)))
+  merged.sort((a, b) => {
+    const ta = a.updated_at || a.lastedittime || 0
+    const tb = b.updated_at || b.lastedittime || 0
+    return new Date(tb) - new Date(ta)
+  })
+  res.json({ success: true, posts: merged })
 })
 
 app.post('/api/blog/posts', (req, res) => {
   const { filename, title, content } = req.body
-  if (!filename) {
-    return res.status(400).json({ success: false, message: 'filename required' })
+  if (!filename || !/\.md$/i.test(filename) || filename.indexOf('..') !== -1 || filename.indexOf('/') !== -1) {
+    return res.status(400).json({ success: false, message: 'filename must be a valid .md name' })
   }
   const existing = db.get('blog_posts').find({ filename }).value()
   if (existing) {
     return res.status(409).json({ success: false, message: 'Post already exists' })
   }
+  const now = new Date().toISOString()
   const post = {
     filename,
-    title: title || filename,
+    title: title || filename.replace(/\.md$/i, ''),
     content: content || '',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
+    created_at: now,
+    updated_at: now,
   }
   db.get('blog_posts').push(post).write()
-  res.json({ success: true, post })
+  syncPostToFile(filename, content || '')
+  const stat = fs.existsSync(path.join(blogDir, filename)) ? fs.statSync(path.join(blogDir, filename)) : null
+  const decorated = Object.assign(decorateDbPost(post), {
+    size: stat ? stat.size : 0,
+    lastedittime: stat ? Math.floor(stat.mtimeMs / 1000) : Math.floor(Date.now() / 1000),
+  })
+  res.json({ success: true, post: decorated })
 })
 
 app.put('/api/blog/posts/:filename', (req, res) => {
@@ -253,22 +350,39 @@ app.put('/api/blog/posts/:filename', (req, res) => {
     ...updates,
     updated_at: new Date().toISOString(),
   }).write()
+  if (typeof updates.content === 'string') {
+    syncPostToFile(filename, updates.content)
+  }
+  res.json({ success: true })
+})
+
+app.delete('/api/blog/posts/:filename', (req, res) => {
+  const { filename } = req.params
+  const removed = db.get('blog_posts').remove({ filename }).write()
+  if (removed.length === 0) {
+    return res.status(404).json({ success: false, message: 'Post not found' })
+  }
+  // 删除静态落盘（仅当该文件此前由 db 管理）
+  try {
+    const blogPath = path.join(blogDir, filename)
+    if (fs.existsSync(blogPath)) fs.unlinkSync(blogPath)
+  } catch (e) {}
   res.json({ success: true })
 })
 
 app.get('/api/blog/posts/:filename', (req, res) => {
   const { filename } = req.params
   const post = db.get('blog_posts').find({ filename }).value()
-  if (!post) {
-    // Try to read from blog/ directory
-    const blogPath = path.join(__dirname, '..', 'blog', filename)
-    if (fs.existsSync(blogPath)) {
-      const content = fs.readFileSync(blogPath, 'utf8')
-      return res.json({ success: true, post: { filename, content, title: filename } })
-    }
-    return res.status(404).json({ success: false, message: 'Post not found' })
+  if (post) {
+    return res.json({ success: true, post: decorateDbPost(post) })
   }
-  res.json({ success: true, post })
+  // 静态 md 兜底
+  const blogPath = path.join(blogDir, filename)
+  if (fs.existsSync(blogPath) && /\.md$/i.test(filename) && filename.indexOf('..') === -1 && filename.indexOf('/') === -1) {
+    const content = fs.readFileSync(blogPath, 'utf8')
+    return res.json({ success: true, post: { filename, content, title: filename.replace(/\.md$/i, ''), source: 'static' } })
+  }
+  res.status(404).json({ success: false, message: 'Post not found' })
 })
 
 // ---------- Import existing localStorage data ----------

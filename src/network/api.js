@@ -76,6 +76,9 @@ const api = {
   updateBlogPost(filename, data) {
     return request.put({ url: `${API_BASE}/blog/posts/${encodeURIComponent(filename)}`, data })
   },
+  deleteBlogPost(filename) {
+    return request.delete({ url: `${API_BASE}/blog/posts/${encodeURIComponent(filename)}` })
+  },
 
   // Import existing data
   importData(data) {

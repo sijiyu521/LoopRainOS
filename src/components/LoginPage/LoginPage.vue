@@ -130,9 +130,6 @@ export default {
     avatar(){
       return this.$store.state.avatar
     },
-    password_answer(){
-      return this.$store.state.admin_password
-    },
     date_weekday_display(){
       return weekdays[this.date_weekday]
     }
@@ -146,7 +143,7 @@ export default {
         this.enter_system()
         return
       }
-      // Try backend auth first, fallback to local
+      // 登录只信后端：以服务器 db.json 中的账号为准
       api.login(this.$store.state.admin_username, this.password, 'admin')
       .then((res) => {
         if (res.data && res.data.success) {
@@ -156,12 +153,7 @@ export default {
         }
       })
       .catch(() => {
-        // Backend unavailable, fallback to local password check
-        if (this.password === this.password_answer) {
-          this.enter_system()
-        } else {
-          this.wrong_password()
-        }
+        this.wrong_password()
       })
     },
     wrong_password(){

@@ -8,12 +8,9 @@ Vue.use(Vuex)
 
 const defaultAvatar = require('../assets/images/avatar.jpg')
 const defaultWallpaper = require('../assets/images/avatar.jpg')
-const defaultAdminPassword = 'loo123!@'
-const defaultAdminUsername = 'munei'
-const storedAdminPassword = localStorage.getItem('looprainos-admin-password')
-const adminPassword = storedAdminPassword === '12345678' ? defaultAdminPassword : (storedAdminPassword || defaultAdminPassword)
+const defaultAdminUsername = 'Administrator'
 const storedAdminUsername = localStorage.getItem('looprainos-admin-username')
-const adminUsername = storedAdminUsername === 'Administrator' ? defaultAdminUsername : (storedAdminUsername || defaultAdminUsername)
+const adminUsername = (storedAdminUsername && storedAdminUsername !== 'Administrator' && storedAdminUsername !== 'munei') ? storedAdminUsername : defaultAdminUsername
 
 const read_file_names = () => JSON.parse(localStorage.getItem('looprainos-file-names') || '{}')
 
@@ -27,7 +24,6 @@ const store = new Vuex.Store({
     wallpaper_image:localStorage.getItem('looprainos-wallpaper-image') || defaultWallpaper,
     wallpaper_color:localStorage.getItem('looprainos-wallpaper-color') || '#20252b',
     role:sessionStorage.getItem('looprainos-role') || '',
-    admin_password:adminPassword,
     admin_username:adminUsername,
     fullHeight:0,
     fullWidth:0,
@@ -89,11 +85,6 @@ const store = new Vuex.Store({
       state.wallpaper_color = color
       localStorage.setItem('looprainos-wallpaper-color', color)
       api.updateSettings({ wallpaper_color: color }).catch(() => {})
-    },
-    set_admin_password(state, password){
-      state.admin_password = password
-      localStorage.setItem('looprainos-admin-password', password)
-      api.setPassword(password).catch(() => {})
     },
     set_admin_username(state, username){
       state.admin_username = username
