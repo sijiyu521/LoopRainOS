@@ -1,26 +1,30 @@
 module.exports = {
+ 
+  publicPath: './',
+  
+
   transpileDependencies: [
     'vuetify'
   ],
   outputDir: './docs',
-  devServer:{
-    host:'0.0.0.0',
-    proxy:{
-      "/dev":{
-        target:"http://127.0.0.1:8079",
-        changeOrigin:true,
-        pathRewrite:{
-          '^/dev':''
+  devServer: {
+    host: '0.0.0.0',
+    proxy: {
+      "/dev": {
+        target: "http://127.0.0.1:8079",
+        changeOrigin: true,
+        pathRewrite: {
+          '^/dev': ''
         }
       },
-      "/api":{
-        target:"http://127.0.0.1:8079",
-        changeOrigin:true
+      "/api": {
+        target: "http://127.0.0.1:8079",
+        changeOrigin: true
       }
     },
   },
   productionSourceMap: false,
-  pwa:{
+  pwa: {
     iconPaths: {
       favicon32: 'favicon.ico',
       favicon16: 'favicon.ico',
